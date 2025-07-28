@@ -1,5 +1,5 @@
-import { ReqSchema } from "../schemas/task";
-import { todoMakerPrompt } from "../prompts/task";
+import { ReqSchema } from "../schemas/gateway";
+import { todoMakerPrompt } from "../prompts/todo";
 import { z } from "zod";
 
 type Req = z.infer<typeof ReqSchema>;

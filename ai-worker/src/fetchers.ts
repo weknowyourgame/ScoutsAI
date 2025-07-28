@@ -1,6 +1,6 @@
 import { Context } from "hono";
-import { callGatewayAI } from "./utils/task";
-import { ReqSchema } from "./schemas/task";
+import { callGatewayAI } from "./utils/gateway";
+import { ReqSchema } from "./schemas/gateway";
 
 export async function taskFetcher(c: Context) {
     const body = await c.req.json();
