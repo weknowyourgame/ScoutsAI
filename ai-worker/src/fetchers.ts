@@ -1,11 +1,11 @@
 import { Context } from "hono";
-import { callGroqGateway } from "./utils/groq";
-import { groqReqSchema } from "./schemas/groq";
+import { callGatewayAI } from "./utils/task";
+import { ReqSchema } from "./schemas/task";
 
-export async function groqFetcher(c: Context) {
+export async function taskFetcher(c: Context) {
     const body = await c.req.json();
-    const input = groqReqSchema.parse(body);
-    const response = await callGroqGateway(c.env, input);
+    const input = ReqSchema.parse(body);
+    const response = await callGatewayAI(c.env, input);
 
     return c.json(response);
 }

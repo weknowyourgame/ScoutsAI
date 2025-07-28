@@ -1,10 +1,10 @@
 import { Context, Hono } from "hono";
-import { groqFetcher } from "./fetchers";
+import { taskFetcher } from "./fetchers";
 
 const app = new Hono();
 
 app.get("/", (c: Context) => c.text("Hello World"));
 
-app.post("/todo-maker", groqFetcher);
+app.post("/task", taskFetcher);
 
 export default app;
