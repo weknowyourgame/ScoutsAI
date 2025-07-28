@@ -12,7 +12,7 @@ export async function callGroqGateway(env: Env, input: GroqReq) {
     messages: [
       {
         role: "system",
-        content: todoMakerPrompt,
+        content: input.system_prompt || todoMakerPrompt,
       },
       {
         role: "user",
@@ -21,9 +21,6 @@ export async function callGroqGateway(env: Env, input: GroqReq) {
     ],
     model: input.model_id,
   });
-  
-  console.log('Request URL:', url);
-  console.log('Request body:', body);
   
   const response = await fetch(url, {
     method: "POST",
@@ -36,9 +33,6 @@ export async function callGroqGateway(env: Env, input: GroqReq) {
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('Response status:', response.status);
-    console.error('Response headers:', Object.fromEntries(response.headers.entries()));
-    console.error('Response body:', errorText);
     throw new Error(`Request failed: ${response.status} ${response.statusText} - ${errorText}`);
   }
 
