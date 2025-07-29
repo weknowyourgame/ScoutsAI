@@ -4,6 +4,7 @@ import Image from "next/image";
 import FloatingMenu from "./components/FloatingMenu";
 import GlowButton from "./components/Glow-button";
 import AiInput from "./components/AiInput";
+import GlowButtonGeneric, { VaraintColor } from "./components/ui/glowbutton";
 
 export default function Home() {
   return (
