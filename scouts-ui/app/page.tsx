@@ -1,6 +1,9 @@
+'use client'
+
 import Image from "next/image";
 import FloatingMenu from "./components/FloatingMenu";
 import GlowButton from "./components/Glow-button";
+import AiInput from "./components/AiInput";
 
 export default function Home() {
   return (
@@ -11,9 +14,20 @@ export default function Home() {
       </div>
       
       {/* Main content */}
-      <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen gap-16 sm:p-20">
-        <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-          <GlowButton />
+      <div className="flex items-center justify-center min-h-screen p-8">
+        <main className="w-full max-w-none">
+            <div className="flex flex-col gap-8 items-center w-full">
+
+              <div className="flex flex-col gap-4 items-center w-full">
+                <AiInput 
+                  placeholder="Ask Scout anything..."
+                  onSubmit={async (value) => {
+                    console.log('AI Input submitted:', value)
+                    // Add your AI processing logic here
+                  }}
+                />
+              </div>
+            </div>
         </main>
       </div>
     </div>

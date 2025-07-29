@@ -22,14 +22,14 @@ const GlowButtonComponent = ({
     className?: string
 }) => {
     return (
-        <button className={cn("hover:opacity-[0.90] rounded-[1.1rem] border font-extralight  relative overflow-hidden after:absolute after:content-[''] after:inset-0 after:[box-shadow:0_0_15px_-1px_#ffffff90_inset] after:rounded-[1rem] before:absolute before:content-[''] before:inset-0  before:rounded-[1rem] flex items-center before:z-20 after:z-10",
+        <button className={cn("hover:opacity-[0.90] rounded-[1.1rem] border font-extralight relative overflow-hidden after:absolute after:content-[''] after:inset-0 after:[box-shadow:0_0_15px_-1px_#ffffff90_inset] after:rounded-[1rem] before:absolute before:content-[''] before:inset-0  before:rounded-[1rem] flex items-center before:z-20 after:z-10 text-lg",
             variant === VaraintColor.indigo ? "bg-indigo-900" : variant === VaraintColor.blue ? "bg-blue-900" : variant === VaraintColor.green ? "bg-green-900" : variant === VaraintColor.orange ? "bg-orange-900" : "bg-orange-900", className)}>
-            <div className="flex items-center gap-2 border-r border-[#fff]/40 px-4 py-3 z-0 ">
-                <EyeOpenIcon className='w-5' />
-                <p>{children}</p>
+            <div className="flex items-center gap-3 border-r border-[#fff]/40 px-6 py-4 z-0 ">
+                <EyeOpenIcon className='w-6 h-6' />
+                <p className="text-lg font-medium">{children}</p>
             </div>
-            <div className={cn("px-3", disableChevron ? 'hidden' : '')}>
-            <PaperPlaneIcon className='w-5' />
+            <div className={cn("px-4", disableChevron ? 'hidden' : '')}>
+            <PaperPlaneIcon className='w-6 h-6' />
             </div>
         </button>
     )

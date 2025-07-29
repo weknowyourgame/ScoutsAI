@@ -24,7 +24,6 @@ const variants = [
 ]
 
 const GlowButton = () => {
-    const [selectedVariant, setSelectedVariant] = useState(variants[0])
     return (
         <div className='w-full flex items-center justify-center relative'>
             {/* <div className="absolute top-0 right-0 flex flex-col gap-2">

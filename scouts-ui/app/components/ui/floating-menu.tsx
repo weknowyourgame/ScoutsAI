@@ -4,17 +4,19 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Home, Mail, Menu, User, X } from 'lucide-react';
 import Link from 'next/link';
 import React, { useState } from 'react'
+import Dialog from '../Dialog';
 
 interface NavLinkItem {
     icon: React.ElementType,
     color?: string,
-    href: string
+    href: string,
+    type: 'home' | 'mail' | 'user'
 }
 
 const defaultNavLinks = [
-    { icon: Home, color: "#fff", href: "#" },
-    { icon: Mail, color: "#fff", href: "#" },
-    { icon: User, color: "#fff", href: "#" },
+    { icon: Home, color: "#fff", href: "#", type: 'home' as const },
+    { icon: Mail, color: "#fff", href: "#", type: 'mail' as const },
+    { icon: User, color: "#fff", href: "#", type: 'user' as const },
 ];
 
 const FloatingMenuComponent = ({
@@ -89,44 +91,43 @@ const FloatingMenuComponent = ({
                                 const y = radius * Math.sin((angle * Math.PI) / 180);
 
                                 return (
-                                    <motion.button
-                                        key={_i}
-                                        className={cn("absolute w-12 h-12 rounded-full flex items-center justify-center hover:text-black cursor-pointer transition-colors duration-200 p-1.5", itemsColor, bgColor, classNameItems)}
-                                        style={{
-                                            top: "-20%",
-                                            right: "-110%",
-                                        }}
-                                        initial={{ opacity: 0, x: -58, y: 10 }}
-                                        animate={{
-                                            opacity: 1,
-                                            x: x,
-                                            y: y,
-                                        }}
-                                        exit={{
-                                            opacity: 0,
-                                            x: -85,
-                                            y: 10,
-                                            transition: {
+                                    <Dialog key={_i} type={item.type}>
+                                        <motion.button
+                                            className={cn("absolute w-12 h-12 rounded-full flex items-center justify-center hover:text-black cursor-pointer transition-colors duration-200 p-1.5", itemsColor, bgColor, classNameItems)}
+                                            style={{
+                                                top: "-20%",
+                                                right: "-110%",
+                                            }}
+                                            initial={{ opacity: 0, x: -58, y: 10 }}
+                                            animate={{
+                                                opacity: 1,
+                                                x: x,
+                                                y: y,
+                                            }}
+                                            exit={{
+                                                opacity: 0,
+                                                x: -85,
+                                                y: 10,
+                                                transition: {
+                                                    duration: 0.2,
+                                                    delay: (navLinks.length - _i) * 0.04,
+                                                },
+                                            }}
+                                            transition={{
                                                 duration: 0.2,
-                                                delay: (navLinks.length - _i) * 0.04,
-                                            },
-                                        }}
-                                        transition={{
-                                            duration: 0.2,
-                                            delay: _i * 0.05,
-                                        }}
-                                        whileHover={{
-                                            scale: 1.2,
-                                            transition: { duration: 0.3, ease: "easeInOut" },
-                                        }}
-                                        whileTap={{
-                                            scale: 0.9,
-                                        }}
-                                    >
-                                        <Link href={item.href}>
+                                                delay: _i * 0.05,
+                                            }}
+                                            whileHover={{
+                                                scale: 1.2,
+                                                transition: { duration: 0.3, ease: "easeInOut" },
+                                            }}
+                                            whileTap={{
+                                                scale: 0.9,
+                                            }}
+                                        >
                                             <Icon className="w-5 h-5" style={{ color: item.color }} />
-                                        </Link>
-                                    </motion.button>
+                                        </motion.button>
+                                    </Dialog>
                                 );
                             })}
                         </div>
