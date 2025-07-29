@@ -5,21 +5,6 @@ import boxen from "boxen";
 import { drawObserveOverlay, clearOverlays, actWithCache } from "./utils.js";
 import { z } from "zod";
 
-/**
- * 🤘 Welcome to Stagehand! Thanks so much for trying us out!
- * 🛠️ CONFIGURATION: stagehand.config.ts will help you configure Stagehand
- *
- * 📝 Check out our docs for more fun use cases, like building agents
- * https://docs.stagehand.dev/
- *
- * 💬 If you have any feedback, reach out to us on Slack!
- * https://stagehand.dev/slack
- *
- * 📚 You might also benefit from the docs for Zod, Browserbase, and Playwright:
- * - https://zod.dev/
- * - https://docs.browserbase.com/
- * - https://playwright.dev/docs/intro
- */
 async function main({
   page,
   context,
@@ -82,7 +67,7 @@ async function main({
 /**
  * This is the main function that runs when you do npm run start
  *
- * YOU PROBABLY DON'T NEED TO MODIFY ANYTHING BELOW THIS POINT!
+ * DON'T NEED TO MODIFY ANYTHING BELOW THIS POINT!
  *
  */
 async function run() {
@@ -114,11 +99,7 @@ async function run() {
     stagehand,
   });
   await stagehand.close();
-  console.log(
-    `\n🤘 Thanks so much for using Stagehand! Reach out to us on Slack if you have any feedback: ${chalk.blue(
-      "https://stagehand.dev/slack",
-    )}\n`,
-  );
+  console.log("Stagehand closed");
 }
 
 run();
