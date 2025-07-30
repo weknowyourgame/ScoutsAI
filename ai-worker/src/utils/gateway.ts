@@ -22,18 +22,28 @@ export async function callGatewayAI(env: Env, input: Req) {
 
   const url = `https://gateway.ai.cloudflare.com/v1/${env.ACCOUNT_ID}/ai-worker-scouts/${input.provider}/chat/completions`;
 
+  // Combine system prompt and user prompt into single user message
+  const combinedPrompt = input.system_prompt 
+    ? `${input.system_prompt}\n\nUser Request: ${input.prompt}`
+    : `${todoMakerPrompt}\n\nUser Request: ${input.prompt}`;
+
   const body = JSON.stringify({
     messages: [
       {
-        role: "system",
-        content: input.system_prompt || todoMakerPrompt,
-      },
-      {
         role: "user",
-        content: input.prompt,
+        content: combinedPrompt,
       }
     ],
     model: input.model_id,
+    // Groq reasoning model optimizations
+    temperature: 0.6,            // Optimal for reasoning tasks (0.5-0.7 range)
+    max_completion_tokens: 2048, // Increased for complex reasoning
+    top_p: 0.95,
+    
+    // Reasoning format for step-by-step thinking
+    reasoning_format: "raw",      // Shows reasoning in <think> tags
+    // For Qwen 3 32B models add:
+    // reasoning_effort: "default"
   });
 
   const response = await fetch(url, {
