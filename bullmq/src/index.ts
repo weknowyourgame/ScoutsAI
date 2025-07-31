@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { jobsQueue, addStagehandTask, StagehandTask } from './queue';
+import { jobsQueue, addStagehandTask, StagehandTask, testRedisConnection } from './queue';
 
 const app = express();
 
@@ -50,6 +50,15 @@ app.post('/add-task', async (req, res) => {
 
   } catch (err) {
     console.error('Failed to add job:', err);
+    
+    // Check if it's a Redis connection error
+    if (err instanceof Error && err.message.includes('ECONNREFUSED')) {
+      return res.status(503).json({ 
+        error: 'Service unavailable',
+        message: 'Redis connection failed. Please check if Redis is running.'
+      });
+    }
+    
     return res.status(500).json({ 
       error: 'Internal server error',
       message: err instanceof Error ? err.message : 'Unknown error'
@@ -103,9 +112,24 @@ app.get('/job/:jobId', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`🚀 Queue API Service running on port ${PORT}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/health`);
-  console.log(`➕ Add tasks: POST http://localhost:${PORT}/add-task`);
-  console.log(`📈 Queue status: GET http://localhost:${PORT}/queue-status`);
-}); 
+
+// Start server with Redis check
+async function startServer() {
+  // Test Redis connection first
+  const redisConnected = await testRedisConnection();
+  
+  if (!redisConnected) {
+    console.error('❌ Cannot start server: Redis connection failed');
+    console.log('💡 Please start Redis or check your Redis configuration');
+    process.exit(1);
+  }
+
+  app.listen(PORT, () => {
+    console.log(`🚀 Queue API Service running on port ${PORT}`);
+    console.log(`📊 Health check: http://localhost:${PORT}/health`);
+    console.log(`➕ Add tasks: POST http://localhost:${PORT}/add-task`);
+    console.log(`📈 Queue status: GET http://localhost:${PORT}/queue-status`);
+  });
+}
+
+startServer().catch(console.error); 

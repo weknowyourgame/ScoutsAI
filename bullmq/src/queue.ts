@@ -9,6 +9,18 @@ export const jobsQueue = new Queue('stagehand-tasks', {
   }
 });
 
+// Test Redis connection
+export async function testRedisConnection() {
+  try {
+    await (await jobsQueue.client).ping();
+    console.log('Redis connection successful');
+    return true;
+  } catch (error) {
+    console.error('Redis connection failed:', error);
+    return false;
+  }
+}
+
 // Task data interface
 export interface StagehandTask {
   todoId: string;
