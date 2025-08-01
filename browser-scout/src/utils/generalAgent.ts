@@ -1,23 +1,31 @@
 import { generalScoutTask } from "../schemas/types";
+import { z } from "zod";
 
-/*
-    example schema:
-    {
-        "goTo": ["https://www.google.com"],
-        "search": ["Flights from NYC to LA"],
-        "action": {
-            "act": "Click the search button & search for flights from NYC to LA",
-            "observe": "Observe the search results",              // General logs for DB
-            "extract": "Extract the search results"
-        }
-    }
-*/
-export async function generalScoutParser(task: generalScoutTask) {
-    const { goTo, search, action } = task;
+export async function generalScoutParser(task: z.infer<typeof generalScoutTask>) {
+    // Parse the task into executable plan
+    const plan = {
+        websites: task.goTo,
+        searches: task.search,
+        actions: task.actions.map((action, index) => ({
+            id: index,
+            type: action.type,
+            description: action.description,
+            order: index        // Preserves execution order
+        }))
+    };
+    
+    console.log("Parsed Task Plan:", plan);
+    return plan;
+}
 
-    // go to the website
-    await page.goto(goTo);
-
-    // search the website
-    await page.search(search);
+export async function generalScoutExecutor(task: z.infer<typeof generalScoutTask>) {
+    // Logic to execute the task
+    console.log("Executing task:", task);
+    
+    // This will be implemented with Stagehand
+    return {
+        success: true,
+        data: "Task executed successfully",
+        logs: ["Task started", "Task completed"]
+    };
 }
