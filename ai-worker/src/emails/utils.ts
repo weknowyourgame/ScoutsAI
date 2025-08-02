@@ -12,7 +12,7 @@ export async function sendEmail(c: Context, input: EmailReq) {
       'Authorization': `Bearer ${c.env.RESEND_API_KEY}`,
     },
     body: JSON.stringify({
-      from: 'Scouts <scouts@scouts.com>',
+      from: '<noreply@sarthakkapila.com>',
       to: [input.email],
       subject: input.subject,
       html: input.body,
