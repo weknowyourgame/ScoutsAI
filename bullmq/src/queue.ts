@@ -1,4 +1,5 @@
 import { Queue } from 'bullmq';
+import { CompleteTask } from './schemas';
 
 // Connect Redis
 export const jobsQueue = new Queue('stagehand-tasks', {
@@ -22,17 +23,7 @@ export async function testRedisConnection() {
 }
 
 // Task data interface
-export interface StagehandTask {
-  todoId: string;
-  title: string;
-  description?: string;
-  agentType: 'BROWSER_AUTOMATION' | 'SEARCH_AGENT' | 'PLEX_AGENT';
-  taskType: 'SINGLE_RUN' | 'CONTINUOUSLY_RUNNING' | 'RUN_ON_CONDITION';
-  condition?: any;
-  resultData?: any;
-  userId: string;
-  scoutId: string;
-}
+export type StagehandTask = CompleteTask;
 
 // Add a task to the queue
 export async function addStagehandTask(taskData: StagehandTask) {

@@ -8,7 +8,8 @@ export async function taskFetcher(c: Context) {
     const body = await c.req.json();
     const input = ReqSchema.parse(body);
     const response = await callGatewayAI(c.env, input);
-
+    
+    // @ts-ignore
     return c.json(response);
 }
 

@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { jobsQueue, addStagehandTask, StagehandTask, testRedisConnection } from './queue';
+import { completeTaskSchema } from './schemas';
 
 const app = express();
 
@@ -33,13 +34,26 @@ app.post('/add-task', async (req, res) => {
       });
     }
 
+    // Validate task schema
+    try {
+      completeTaskSchema.parse(jobData);
+    } catch (error) {
+      return res.status(400).json({
+        error: 'Invalid task data',
+        details: error instanceof Error ? error.message : 'Unknown validation error'
+      });
+    }
+
     // Add job to queue
     const job = await addStagehandTask(jobData);
     
     console.log(`Task added to queue: ${job.id}`, {
       todoId: jobData.todoId,
       agentType: jobData.agentType,
-      title: jobData.title
+      title: jobData.title,
+      goTo: jobData.goTo,
+      search: jobData.search,
+      actionsCount: jobData.actions?.length || 0
     });
 
     return res.json({ 
@@ -119,16 +133,16 @@ async function startServer() {
   const redisConnected = await testRedisConnection();
   
   if (!redisConnected) {
-    console.error('❌ Cannot start server: Redis connection failed');
-    console.log('💡 Please start Redis or check your Redis configuration');
+    console.error('Cannot start server: Redis connection failed');
+    console.log('Please start Redis or check your Redis configuration');
     process.exit(1);
   }
 
   app.listen(PORT, () => {
-    console.log(`🚀 Queue API Service running on port ${PORT}`);
-    console.log(`📊 Health check: http://localhost:${PORT}/health`);
-    console.log(`➕ Add tasks: POST http://localhost:${PORT}/add-task`);
-    console.log(`📈 Queue status: GET http://localhost:${PORT}/queue-status`);
+    console.log(`Queue API Service running on port ${PORT}`);
+    console.log(`Health check: http://localhost:${PORT}/health`);
+    console.log(`Add tasks: POST http://localhost:${PORT}/add-task`);
+    console.log(`Queue status: GET http://localhost:${PORT}/queue-status`);
   });
 }
 

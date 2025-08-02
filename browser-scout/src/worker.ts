@@ -47,6 +47,7 @@ worker.on('completed', (job, result) => {
 });
 
 worker.on('failed', (job, err) => {
+    // @ts-ignore
     console.error(`Job ${job.id} failed with error:`, err);
 });
 

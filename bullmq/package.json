@@ -20,7 +20,8 @@
   "dependencies": {
     "bullmq": "^5.56.9",
     "cors": "^2.8.5",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "zod": "^4.0.14"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
