@@ -11,7 +11,7 @@ const connection = {
 };
 
 // Create worker to process browser scout jobs
-const worker = new Worker('browser-scout-queue', async (job) => {
+const worker = new Worker('stagehand-tasks', async (job) => {
     console.log(`Processing job ${job.id} with data:`, job.data);
     
     try {
