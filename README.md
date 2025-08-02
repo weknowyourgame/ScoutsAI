@@ -2,8 +2,7 @@
 OpenScouts like [yutori_ai](http://yutori.com/) scouts but OSS.
 
 ## Overview
-<img width="1901" height="683" alt="Screenshot 2025-08-01 at 4 17 44 PM" src="https://github.com/user-attachments/assets/
-760c4783-da0b-4cde-93d4-64003c708221" />
+<img width="1901" height="683" alt="Screenshot 2025-08-01 at 4 17 44 PM" src="https://github.com/user-attachments/assets/760c4783-da0b-4cde-93d4-64003c708221" />
 
 ScoutsAI is a microservices-based architecture designed to handle intelligent web automation tasks. The platform processes natural language requests, converts them into structured browser automation tasks, and executes them through a distributed queue system.
 
