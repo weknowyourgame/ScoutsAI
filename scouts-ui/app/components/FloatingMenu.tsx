@@ -1,13 +1,13 @@
 "use client";
 import React from 'react'
 import FloatingMenuComponent from './ui/floating-menu'
-import { Home, Mail, User } from 'lucide-react';
+import { CircleQuestionMark, Mail, Search } from 'lucide-react';
 
 const FloatingMenu = () => {
     const NavLinks = [
-        { icon: Home, color: "#fff", href: "#" },
-        { icon: Mail, color: "#fff", href: "#" },
-        { icon: User, color: "#fff", href: "#" },
+        { icon: CircleQuestionMark, color: "#fff", href: "#", type: 'about' as const },
+        { icon: Mail, color: "#fff", href: "#", type: 'mail' as const },
+        { icon: Search, color: "#fff", href: "#", type: 'scouts' as const },
     ];
     
     return (

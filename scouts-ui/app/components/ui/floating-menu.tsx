@@ -1,7 +1,7 @@
 'use client'
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Home, Mail, Menu, User, X } from 'lucide-react';
+import { Home, Mail, Menu, User, X, Search} from 'lucide-react';
 import Link from 'next/link';
 import React, { useState } from 'react'
 import Dialog from '../Dialog';
@@ -10,13 +10,14 @@ interface NavLinkItem {
     icon: React.ElementType,
     color?: string,
     href: string,
-    type: 'home' | 'mail' | 'user'
+    type: 'home' | 'mail' | 'user' | 'scouts' | 'about'
 }
 
 const defaultNavLinks = [
     { icon: Home, color: "#fff", href: "#", type: 'home' as const },
     { icon: Mail, color: "#fff", href: "#", type: 'mail' as const },
     { icon: User, color: "#fff", href: "#", type: 'user' as const },
+    { icon: Search, color: "#fff", href: "#", type: 'scouts' as const },
 ];
 
 const FloatingMenuComponent = ({
