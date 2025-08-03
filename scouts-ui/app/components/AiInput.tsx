@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import { EyeOpenIcon, PaperPlaneIcon } from '@radix-ui/react-icons'
 import { Search, Clock, AlertCircle, Bell } from 'lucide-react'
@@ -29,34 +29,138 @@ const AiInput = ({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showAnalysis, setShowAnalysis] = useState(false)
   const [analysisSteps, setAnalysisSteps] = useState<AnalysisStep[]>([])
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [currentAnalysis, setCurrentAnalysis] = useState("")
+  const analysisTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Show analysis when user starts typing
+  // Analyze user input instantly while typing
   useEffect(() => {
-    if (inputValue.trim().length > 0) {
-      setShowAnalysis(true)
-      // Simulate analysis steps
-      const steps: AnalysisStep[] = [
+    if (inputValue.trim().length > 5) {
+      // Clear existing timeout
+      if (analysisTimeoutRef.current) {
+        clearTimeout(analysisTimeoutRef.current)
+      }
+
+      // Set new timeout for instant analysis (500ms)
+      analysisTimeoutRef.current = setTimeout(async () => {
+        await analyzeUserInput(inputValue)
+      }, 500)
+    } else {
+      setShowAnalysis(false)
+      setCurrentAnalysis("")
+    }
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (analysisTimeoutRef.current) {
+        clearTimeout(analysisTimeoutRef.current)
+      }
+    }
+  }, [inputValue])
+
+  const analyzeUserInput = async (input: string) => {
+    if (!input.trim() || isAnalyzing) return
+
+    setIsAnalyzing(true)
+    setShowAnalysis(true)
+    
+    // Set initial analysis steps
+    setAnalysisSteps([
+      {
+        id: 'what',
+        title: 'WHAT',
+        description: 'Understanding what you\'re looking for...',
+        icon: <Search className="w-4 h-4" />,
+        status: 'processing'
+      },
+      {
+        id: 'when',
+        title: 'WHEN TO NOTIFY OF ANY UPDATES',
+        description: 'Setting up notification preferences...',
+        icon: <Bell className="w-4 h-4" />,
+        status: 'pending',
+        details: ['Every hour', 'Once a day', 'Once a week']
+      }
+    ])
+
+    try {
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          provider: 'groq',
+          model_id: 'llama-3.1-8b-instant',
+          prompt: input,
+          system_prompt: 'Analyze this monitoring request'
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Analysis failed')
+      }
+
+      const data = await response.json()
+      
+      // Parse the AI response - now it's just a simple string
+      let result = "Monitoring request"
+      try {
+        const content = data.choices?.[0]?.message?.content || ''
+        // Clean up the response - remove any extra formatting
+        result = content.trim().replace(/^["']|["']$/g, '')
+        if (!result) {
+          result = "Monitoring request"
+        }
+      } catch (parseError) {
+        console.error('Failed to parse AI response:', parseError)
+        result = "Monitoring request"
+      }
+
+      setCurrentAnalysis(result)
+      
+      // Update analysis steps with results
+      setAnalysisSteps([
         {
           id: 'what',
           title: 'WHAT',
-          description: 'Understanding what you\'re looking for...',
+          description: result,
           icon: <Search className="w-4 h-4" />,
-          status: 'processing'
+          status: 'complete'
         },
         {
           id: 'when',
           title: 'WHEN TO NOTIFY OF ANY UPDATES',
           description: 'Setting up notification preferences...',
           icon: <Bell className="w-4 h-4" />,
-          status: 'pending',
+          status: 'complete',
           details: ['Every hour', 'Once a day', 'Once a week']
         }
-      ]
-      setAnalysisSteps(steps)
-    } else {
-      setShowAnalysis(false)
+      ])
+
+    } catch (error) {
+      console.error('Analysis error:', error)
+      setAnalysisSteps([
+        {
+          id: 'what',
+          title: 'WHAT',
+          description: 'Understanding what you\'re looking for...',
+          icon: <Search className="w-4 h-4" />,
+          status: 'complete'
+        },
+        {
+          id: 'when',
+          title: 'WHEN TO NOTIFY OF ANY UPDATES',
+          description: 'Setting up notification preferences...',
+          icon: <Bell className="w-4 h-4" />,
+          status: 'complete',
+          details: ['Every hour', 'Once a day', 'Once a week']
+        }
+      ])
+    } finally {
+      setIsAnalyzing(false)
     }
-  }, [inputValue])
+  }
 
   const handleSubmit = async () => {
     if (!inputValue.trim() || isSubmitting) return
@@ -66,6 +170,7 @@ const AiInput = ({
       await onSubmit?.(inputValue)
       setInputValue("")
       setShowAnalysis(false)
+      setCurrentAnalysis("")
     } catch (error) {
       console.error('Error submitting:', error)
     } finally {
@@ -118,8 +223,12 @@ const AiInput = ({
           >
             <div className="flex items-center gap-3 mb-4">
               <div className="w-4 h-4 bg-neutral-600 rounded-full animate-pulse" />
-              <span className="text-neutral-300 font-medium">Analyzing your request...</span>
-              <span className="text-neutral-500 text-sm">0.5s</span>
+              <span className="text-neutral-300 font-medium">
+                {isAnalyzing ? "Analyzing your request..." : "Analysis complete"}
+              </span>
+              <span className="text-neutral-500 text-sm">
+                {isAnalyzing ? "0.5s" : "✓"}
+              </span>
             </div>
 
             <div className="space-y-4">
@@ -134,6 +243,10 @@ const AiInput = ({
                   <div className="flex-shrink-0 mt-1">
                     {step.status === 'processing' ? (
                       <div className="w-4 h-4 border-2 border-neutral-600 border-t-white rounded-full animate-spin" />
+                    ) : step.status === 'complete' ? (
+                      <div className="w-4 h-4 bg-green-500 rounded-sm flex items-center justify-center">
+                        <div className="w-2 h-2 bg-white rounded-sm" />
+                      </div>
                     ) : (
                       <div className="w-4 h-4 bg-red-500 rounded-sm flex items-center justify-center">
                         <AlertCircle className="w-3 h-3 text-white" />

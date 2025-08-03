@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const ReqSchema = z.object({
+export const analyzeReqSchema = z.object({
   provider: z.enum(["groq", "perplexity-ai", "google-ai-studio", "openai", "workers-ai"]),
   model_id: z.enum([
     "gemini-2.5-flash", 
@@ -16,4 +16,4 @@ export const ReqSchema = z.object({
   ]),
   prompt: z.string(),
   system_prompt: z.string().optional(),
-});
+}); 
