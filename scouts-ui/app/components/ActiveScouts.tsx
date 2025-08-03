@@ -18,11 +18,11 @@ interface Scout {
   }>;
 }
 
-interface ActiveScoutsProps {
+interface AllScoutsProps {
   className?: string;
 }
 
-export default function ActiveScouts({ className = '' }: ActiveScoutsProps) {
+export default function AllScouts({ className = '' }: AllScoutsProps) {
   const [scouts, setScouts] = useState<Scout[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -31,8 +31,10 @@ export default function ActiveScouts({ className = '' }: ActiveScoutsProps) {
     try {
       const response = await fetch('/api/scouts');
       const data = await response.json();
+      console.log('Fetched scouts data:', data); // Debug log
       if (data.scouts) {
         setScouts(data.scouts);
+        console.log('Total scouts found:', data.scouts.length); // Debug log
       }
     } catch (error) {
       console.error('Error fetching scouts:', error);

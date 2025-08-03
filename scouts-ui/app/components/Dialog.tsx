@@ -14,7 +14,7 @@ import { Label } from "./ui/label"
 import { Textarea } from "./ui/textarea"
 import { redirect } from "next/navigation"
 import SignInModal from "./ui/sign-in"
-import ActiveScouts from "./ActiveScouts"
+import AllScouts from "./ActiveScouts"
 
 interface DialogProps {
     children: React.ReactNode
@@ -168,13 +168,13 @@ const Dialog = ({ children, type = 'mail' }: DialogProps) => {
                 return (
                     <>
                         <DialogHeader>
-                            <DialogTitle>Active Scouts</DialogTitle>
+                            <DialogTitle>All Scouts</DialogTitle>
                             <DialogDescription>
-                                View all currently active scouts and their progress.
+                                View all scouts ever created and their progress.
                             </DialogDescription>
                         </DialogHeader>
                         <div className="mt-4">
-                            <ActiveScouts />
+                            <AllScouts />
                         </div>
                     </>
                 )
