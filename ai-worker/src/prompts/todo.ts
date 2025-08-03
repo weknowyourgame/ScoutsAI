@@ -82,6 +82,22 @@ For each todo, provide:
   "description": "Clear, actionable description of what this todo should accomplish",
   "agentType": "ACTION_SCOUT|BROWSER_AUTOMATION|SEARCH_AGENT|PLEX_AGENT|RESEARCH_AGENT|SUMMARY_AGENT",
   "taskType": "SINGLE_RUN|CONTINUOUSLY_RUNNING|RUN_ON_CONDITION|THINKING_RESEARCH|FAILED_TASK_RECOVERY",
+  "goTo": ["https://example.com", "https://another-site.com"], // For BROWSER_AUTOMATION: specific URLs to visit
+  "search": ["search term 1", "search term 2"], // For SEARCH_AGENT: specific search terms
+  "actions": [ // For BROWSER_AUTOMATION: specific actions to perform
+    {
+      "type": "act",
+      "description": "Click on the price button"
+    },
+    {
+      "type": "observe", 
+      "description": "Extract the current price from the page"
+    },
+    {
+      "type": "extract",
+      "description": "Get product details including price, availability, and reviews"
+    }
+  ],
   "condition": { // For RUN_ON_CONDITION tasks
     "type": "price_threshold|data_change|time_based|failure_count",
     "parameters": {
@@ -92,6 +108,11 @@ For each todo, provide:
   "scheduledFor": "2024-01-01T00:00:00Z" // For CONTINUOUSLY_RUNNING tasks
 }
 \`\`\`
+
+## Action Types for BROWSER_AUTOMATION:
+- **act**: Click buttons, fill forms, navigate pages
+- **observe**: Extract specific information from pages
+- **extract**: Get structured data with specific schema
 
 ## Example Patterns
 
@@ -116,6 +137,15 @@ For each todo, provide:
 3. **RUN_ON_CONDITION + SUMMARY_AGENT**: Generate digest when 5+ articles found
 4. **THINKING_RESEARCH + RESEARCH_AGENT**: Sentiment analysis weekly
 5. **FAILED_TASK_RECOVERY + SEARCH_AGENT**: Use alternative search methods
+
+### Product Price Monitoring Scout (e.g., iPhone 15)
+1. **SINGLE_RUN + BROWSER_AUTOMATION**: 
+   - goTo: ["https://www.amazon.com", "https://www.bestbuy.com"]
+   - actions: [{"type": "extract", "description": "Get iPhone 15 price and availability"}]
+2. **CONTINUOUSLY_RUNNING + BROWSER_AUTOMATION**: Check prices every 6 hours
+3. **RUN_ON_CONDITION + ACTION_SCOUT**: Send notification when price drops below $800
+4. **THINKING_RESEARCH + RESEARCH_AGENT**: Analyze price trends weekly
+5. **FAILED_TASK_RECOVERY + BROWSER_AUTOMATION**: Try alternative retailers if primary fails
 
 ## Quality Checklist
 

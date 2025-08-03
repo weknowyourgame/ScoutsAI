@@ -7,6 +7,7 @@ interface Scout {
   id: string;
   userQuery: string;
   status: string;
+  notificationFrequency: string;
   createdAt: string;
   user: {
     email: string;
@@ -117,6 +118,9 @@ export default function AllScouts({ className = '' }: AllScoutsProps) {
                     <div className="flex justify-between text-sm text-gray-400">
                       <span>User: {scout.user.email}</span>
                       <span>Created: {new Date(scout.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-gray-400">
+                      <span>Notifications: {scout.notificationFrequency.replace('_', ' ').toLowerCase()}</span>
                     </div>
                     
                     {scout.todos.length > 0 && (

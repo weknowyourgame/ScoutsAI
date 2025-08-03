@@ -1,13 +1,13 @@
-import { generalScoutTask } from "./schemas/types";
+import { completeTaskSchema, generalScoutTask } from "./schemas/types";
 import { generalScoutParser } from "./utils/generalAgent";
 import { StagehandExecutor } from "./utils/stagehand-executor.js";
 import { z } from "zod";
 
 export class GeneralScoutAgent {
-    private task: z.infer<typeof generalScoutTask>;
+    private task: z.infer<typeof completeTaskSchema>;
     private executor: StagehandExecutor;
 
-    constructor(task: z.infer<typeof generalScoutTask>) {
+    constructor(task: z.infer<typeof completeTaskSchema>) {
         this.task = task;
         this.executor = new StagehandExecutor();
     }
@@ -37,7 +37,7 @@ export class GeneralScoutAgent {
     static async processJob(jobData: any) {
         try {
             // Validate the job data against our schema
-            const validatedTask = generalScoutTask.parse(jobData);
+            const validatedTask = completeTaskSchema.parse(jobData);
             
             // Create agent instance
             const agent = new GeneralScoutAgent(validatedTask);

@@ -23,8 +23,73 @@ export default function Home() {
                 <AiInput 
                   placeholder="Ask Scout anything..."
                   onSubmit={async (value) => {
-                    console.log('AI Input submitted:', value)
-                    // Add your AI processing logic here
+                    try {
+                      console.log('AI Input submitted:', value)
+                      
+                      // Parse the submission data
+                      const submissionData = JSON.parse(value)
+                      const { query, notificationFrequency } = submissionData
+                      
+                      // Create scout in database
+                      const scoutResponse = await fetch('/api/scouts', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                          userQuery: query,
+                          userId: 'temp-user-id', // TODO: Get from auth
+                          notificationFrequency: notificationFrequency
+                        })
+                      })
+                      
+                      if (!scoutResponse.ok) {
+                        throw new Error('Failed to create scout')
+                      }
+                      
+                      const scoutData = await scoutResponse.json()
+                      console.log('Scout created:', scoutData)
+                      
+                      // Generate tasks for the scout
+                      const taskResponse = await fetch('/api/generate-tasks', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                          scoutId: scoutData.scout.id,
+                          userQuery: query
+                        })
+                      })
+                      
+                      if (!taskResponse.ok) {
+                        throw new Error('Failed to generate tasks')
+                      }
+                      
+                      const taskData = await taskResponse.json()
+                      console.log('Tasks generated:', taskData)
+                      
+                      // Queue tasks for execution
+                      const queueResponse = await fetch('/api/queue-tasks', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                          scoutId: scoutData.scout.id
+                        })
+                      })
+                      
+                      if (!queueResponse.ok) {
+                        throw new Error('Failed to queue tasks')
+                      }
+                      
+                      const queueData = await queueResponse.json()
+                      console.log('Tasks queued:', queueData)
+                      
+                    } catch (error) {
+                      console.error('Error in scout creation flow:', error)
+                    }
                   }}
                 />
               </div>

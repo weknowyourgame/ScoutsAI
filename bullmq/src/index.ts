@@ -109,7 +109,7 @@ app.get('/job/:jobId', async (req, res) => {
     }
 
     const state = await job.getState();
-    const progress = await job.progress();
+    const progress = job.progress ? await job.progress() : 0;
     const result = await job.returnvalue;
 
     res.json({

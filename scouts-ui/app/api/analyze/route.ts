@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         choices: [{
           message: {
-            content: "Monitor flight prices and availability for routes from United Kingdom to United States, tracking prices across multiple airlines and booking platforms"
+            content: "I'll help you research and gather information on your topic. Let me create a comprehensive search and analysis plan to find the most relevant and up-to-date information for you."
           }
         }]
       })

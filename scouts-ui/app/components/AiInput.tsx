@@ -18,6 +18,7 @@ interface AnalysisStep {
   icon: React.ReactNode
   status: 'pending' | 'processing' | 'complete'
   details?: string[]
+  selectedOption?: string
 }
 
 const AiInput = ({ 
@@ -31,6 +32,7 @@ const AiInput = ({
   const [analysisSteps, setAnalysisSteps] = useState<AnalysisStep[]>([])
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [currentAnalysis, setCurrentAnalysis] = useState("")
+  const [selectedNotificationOption, setSelectedNotificationOption] = useState("")
   const analysisTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Analyze user input instantly while typing
@@ -76,10 +78,10 @@ const AiInput = ({
       {
         id: 'when',
         title: 'WHEN TO NOTIFY OF ANY UPDATES',
-        description: 'Setting up notification preferences...',
+        description: 'Select the frequency of notifications below',
         icon: <Bell className="w-4 h-4" />,
         status: 'pending',
-        details: ['Every hour', 'Once a day', 'Once a week']
+        details: ['Every hour', 'Once a day', 'Once a week', 'Let AI decide :)']
       }
     ])
 
@@ -131,10 +133,10 @@ const AiInput = ({
         {
           id: 'when',
           title: 'WHEN TO NOTIFY OF ANY UPDATES',
-          description: 'Setting up notification preferences...',
+          description: 'Select the frequency of notifications below',
           icon: <Bell className="w-4 h-4" />,
           status: 'complete',
-          details: ['Every hour', 'Once a day', 'Once a week']
+          details: ['Every hour', 'Once a day', 'Once a week', 'Let AI decide :)']
         }
       ])
 
@@ -151,10 +153,10 @@ const AiInput = ({
         {
           id: 'when',
           title: 'WHEN TO NOTIFY OF ANY UPDATES',
-          description: 'Setting up notification preferences...',
+          description: 'Select the frequency of notifications below',
           icon: <Bell className="w-4 h-4" />,
           status: 'complete',
-          details: ['Every hour', 'Once a day', 'Once a week']
+          details: ['Every hour', 'Once a day', 'Once a week', 'Let AI decide :)']
         }
       ])
     } finally {
@@ -167,10 +169,17 @@ const AiInput = ({
     
     setIsSubmitting(true)
     try {
-      await onSubmit?.(inputValue)
+      // Send both the query and the selected notification frequency
+      const submissionData = {
+        query: inputValue,
+        notificationFrequency: selectedNotificationOption || 'ONCE_A_DAY'
+      }
+      
+      await onSubmit?.(JSON.stringify(submissionData))
       setInputValue("")
       setShowAnalysis(false)
       setCurrentAnalysis("")
+      setSelectedNotificationOption("")
     } catch (error) {
       console.error('Error submitting:', error)
     } finally {
@@ -183,6 +192,15 @@ const AiInput = ({
       e.preventDefault()
       handleSubmit()
     }
+  }
+
+  const handleOptionSelect = (stepId: string, option: string) => {
+    setSelectedNotificationOption(option)
+    setAnalysisSteps(prev => prev.map(step => 
+      step.id === stepId 
+        ? { ...step, selectedOption: option }
+        : step
+    ))
   }
 
   return (
@@ -266,12 +284,49 @@ const AiInput = ({
                     </p>
                     
                     {step.details && (
-                      <div className="space-y-1">
+                      <div className="grid grid-cols-2 gap-2 mt-3">
                         {step.details.map((detail, idx) => (
-                          <div key={idx} className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-neutral-600 rounded-full" />
-                            <span className="text-neutral-500 text-sm">{detail}</span>
-                          </div>
+                          <motion.button
+                            key={idx}
+                            onClick={() => handleOptionSelect(step.id, detail)}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            className={cn(
+                              "relative flex items-center gap-3 p-3 rounded-xl border transition-all duration-300",
+                              "text-left hover:shadow-lg",
+                              step.selectedOption === detail
+                                ? "bg-gradient-to-r from-[#126fff] to-[#126fff]/80 border-[#126fff] text-white shadow-lg"
+                                : "bg-neutral-800/50 border-neutral-600 text-neutral-400 hover:border-neutral-500 hover:text-neutral-300"
+                            )}
+                          >
+                            {/* Selection indicator */}
+                            <div className={cn(
+                              "w-4 h-4 rounded-full border-2 transition-all duration-300 flex items-center justify-center",
+                              step.selectedOption === detail
+                                ? "border-white bg-white"
+                                : "border-neutral-500"
+                            )}>
+                              {step.selectedOption === detail && (
+                                <motion.div
+                                  initial={{ scale: 0 }}
+                                  animate={{ scale: 1 }}
+                                  className="w-2 h-2 bg-[#126fff] rounded-full"
+                                />
+                              )}
+                            </div>
+                            
+                            {/* Option text */}
+                            <span className="text-sm font-medium">{detail}</span>
+                            
+                            {/* Glow effect for selected */}
+                                                          {step.selectedOption === detail && (
+                                <motion.div
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  className="absolute inset-0 rounded-xl bg-gradient-to-r from-[#126fff]/20 to-[#126fff]/20 blur-sm"
+                                />
+                              )}
+                          </motion.button>
                         ))}
                       </div>
                     )}

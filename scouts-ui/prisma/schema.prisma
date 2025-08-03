@@ -23,12 +23,13 @@ model User {
 
 // Scout here represents a single scout request from a user
 model Scout {
-  id          String      @id @default(cuid())
-  userId      String
-  userQuery   String
-  status      ScoutStatus @default(IN_PROGRESS)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id                    String                @id @default(cuid())
+  userId                String
+  userQuery             String
+  status                ScoutStatus           @default(IN_PROGRESS)
+  notificationFrequency NotificationFrequency @default(ONCE_A_DAY)
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
 
   user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   todos Todo[]
@@ -130,4 +131,11 @@ enum TodoStatus {
   IN_PROGRESS
   COMPLETED
   FAILED
+}
+
+enum NotificationFrequency {
+  EVERY_HOUR
+  ONCE_A_DAY
+  ONCE_A_WEEK
+  AI_DECIDE
 }

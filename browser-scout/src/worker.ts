@@ -1,6 +1,6 @@
 import { Worker } from 'bullmq';
 import { GeneralScoutAgent } from './generalAgent.js';
-import { generalScoutTask } from './schemas/types.js';
+import { completeTaskSchema } from './schemas/types.js';
 import { z } from 'zod';
 
 // Redis connection configuration
@@ -16,16 +16,63 @@ const worker = new Worker('stagehand-tasks', async (job) => {
     
     try {
         // Validate the job data
-        const validatedData = generalScoutTask.parse(job.data);
+        const validatedData = completeTaskSchema.parse(job.data);
         
         // Process the job using GeneralScoutAgent
         const result = await GeneralScoutAgent.processJob(validatedData);
+        
+        // Update the task status in database
+        try {
+            const updateResponse = await fetch(`${process.env.API_BASE_URL || 'http://localhost:3000'}/api/update-task-status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    todoId: validatedData.todoId,
+                    status: 'COMPLETED',
+                    resultData: result
+                })
+            });
+            
+            if (updateResponse.ok) {
+                console.log(`Task ${validatedData.todoId} status updated to COMPLETED`);
+            } else {
+                console.error(`Failed to update task ${validatedData.todoId} status`);
+            }
+        } catch (error) {
+            console.error('Failed to update task status:', error);
+        }
         
         console.log(`Job ${job.id} completed successfully`);
         return result;
         
     } catch (error) {
         console.error(`Job ${job.id} failed:`, error);
+        
+        // Update task status to FAILED
+        try {
+            const updateResponse = await fetch(`${process.env.API_BASE_URL || 'http://localhost:3000'}/api/update-task-status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    todoId: validatedData.todoId,
+                    status: 'FAILED',
+                    resultData: { error: error instanceof Error ? error.message : 'Unknown error' }
+                })
+            });
+            
+            if (updateResponse.ok) {
+                console.log(`Task ${validatedData.todoId} status updated to FAILED`);
+            } else {
+                console.error(`Failed to update task ${validatedData.todoId} status to FAILED`);
+            }
+        } catch (updateError) {
+            console.error('Failed to update task status to FAILED:', updateError);
+        }
+        
         throw error;
     }
 }, {

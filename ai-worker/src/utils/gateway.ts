@@ -78,8 +78,7 @@ async function callGroqAPI(env: Env, prompt: string, model: string, isAnalyze: b
     model: model,
     temperature: isAnalyze ? 0.1 : 0.6,
     max_tokens: isAnalyze ? 150 : 2048,
-    top_p: 0.95,
-    ...(isAnalyze ? {} : { reasoning_format: "raw" })
+    top_p: 0.95
   });
 
   const response = await fetch(url, {
@@ -196,7 +195,7 @@ async function callGoogleAIStudioAPI(env: Env, prompt: string, model: string, is
     content = data.content;
   } else {
     console.error('Unexpected Google AI Studio response format:', data);
-    content = "Monitor flight prices and availability for routes from United Kingdom to United States, tracking prices across multiple airlines and booking platforms";
+    content = "I'll help you research and gather information on your topic. Let me create a comprehensive search and analysis plan to find the most relevant and up-to-date information for you.";
   }
   
   console.log('Extracted content:', content);

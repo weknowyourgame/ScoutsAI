@@ -31,4 +31,35 @@ export async function GET() {
       { status: 500 }
     );
   }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { userQuery, userId, notificationFrequency = 'ONCE_A_DAY' } = body;
+
+    const newScout = await prisma.scout.create({
+      data: {
+        userId,
+        userQuery,
+        notificationFrequency: notificationFrequency as any,
+        status: 'IN_PROGRESS'
+      },
+      include: {
+        user: {
+          select: {
+            email: true
+          }
+        }
+      }
+    });
+
+    return NextResponse.json({ scout: newScout });
+  } catch (error) {
+    console.error('Error creating scout:', error);
+    return NextResponse.json(
+      { error: 'Failed to create scout' },
+      { status: 500 }
+    );
+  }
 } 

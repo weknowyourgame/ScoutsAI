@@ -1,6 +1,6 @@
 import { Stagehand, Page } from "@browserbasehq/stagehand";
 import StagehandConfig from "../../stagehand.config.js";
-import { generalScoutTask } from "../schemas/types";
+import { completeTaskSchema } from "../schemas/types";
 import { z } from "zod";
 
 export class StagehandExecutor {
@@ -20,9 +20,10 @@ export class StagehandExecutor {
         console.log(logMessage);
     }
 
-    async executeTask(task: z.infer<typeof generalScoutTask>) {
+    async executeTask(task: z.infer<typeof completeTaskSchema>) {
         try {
             this.log("Starting Stagehand execution");
+            this.log(`Notification frequency: ${task.notificationFrequency || 'ONCE_A_DAY'}`);
             
             // Initialize Stagehand
             await this.stagehand.init();
@@ -54,7 +55,7 @@ export class StagehandExecutor {
         }
     }
 
-    private async executePlan(task: z.infer<typeof generalScoutTask>) {
+    private async executePlan(task: z.infer<typeof completeTaskSchema>) {
         const results = {
             navigation: [] as string[],
             searches: [] as string[],
@@ -62,8 +63,49 @@ export class StagehandExecutor {
             extractedData: [] as any[]
         };
 
+        // If no specific actions are defined, try to perform a basic search
+        if ((!task.goTo || task.goTo.length === 0) && (!task.search || task.search.length === 0) && (!task.actions || task.actions.length === 0)) {
+            this.log("No specific actions defined, performing basic search");
+            
+            // Navigate to Google and perform a search based on the task title
+            await this.page.goto("https://www.google.com");
+            await this.page.waitForTimeout(2000);
+            
+            const searchQuery = task.title.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(' ').slice(-3).join(' ');
+            this.log(`Performing basic search for: ${searchQuery}`);
+            
+            await this.page.act(`Search for "${searchQuery}"`);
+            await this.page.waitForTimeout(3000);
+            
+            // Extract basic search results
+            try {
+                const searchResults = await this.page.extract({
+                    instruction: "Extract the first 5 search results with titles and links",
+                    schema: z.object({
+                        results: z.array(z.object({
+                            title: z.string().optional(),
+                            link: z.string().optional(),
+                            snippet: z.string().optional()
+                        }))
+                    })
+                });
+                
+                results.extractedData.push({
+                    actionIndex: 0,
+                    description: "Basic search results",
+                    data: searchResults
+                });
+                
+                this.log("Basic search completed successfully");
+            } catch (error) {
+                this.log(`Basic search extraction failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
+            
+            return results;
+        }
+
         // Navigate to websites
-        for (const website of task.goTo) {
+        for (const website of task.goTo || []) {
             this.log(`Navigating to: ${website}`);
             await this.page.goto(website);
             await this.page.waitForTimeout(2000); // Wait for page load
@@ -71,7 +113,7 @@ export class StagehandExecutor {
         }
 
         // Perform searches if specified
-        for (const searchTerm of task.search) {
+        for (const searchTerm of task.search || []) {
             this.log(`Searching for: ${searchTerm}`);
             await this.page.act(`Search for "${searchTerm}"`);
             await this.page.waitForTimeout(2000);
@@ -79,9 +121,9 @@ export class StagehandExecutor {
         }
 
         // Execute actions in sequence
-        for (let i = 0; i < task.actions.length; i++) {
-            const action = task.actions[i];
-            this.log(`Executing action ${i + 1}/${task.actions.length}: ${action.type} - ${action.description}`);
+        for (let i = 0; i < (task.actions?.length || 0); i++) {
+            const action = task.actions![i];
+            this.log(`Executing action ${i + 1}/${task.actions?.length || 0}: ${action.type} - ${action.description}`);
             
             try {
                 switch (action.type) {
@@ -154,7 +196,7 @@ export class StagehandExecutor {
             }
         }
 
-        this.log(`Completed ${task.actions.length} actions`);
+        this.log(`Completed ${task.actions?.length || 0} actions`);
         return results;
     }
 } 
