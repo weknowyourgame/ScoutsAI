@@ -134,10 +134,14 @@ async function callPerplexityAPI(env: Env, prompt: string, model: string, isAnal
 
   if (!response.ok) {
     const errorText = await response.text();
+    console.error('Perplexity API error:', errorText);
     throw new Error(`Perplexity API failed: ${response.status} ${response.statusText} - ${errorText}`);
   }
 
-  return await response.json();
+  const data = await response.json();
+  console.log('Perplexity API call - Response:', JSON.stringify(data, null, 2));
+  
+  return data;
 }
 
 async function callGoogleAIStudioAPI(env: Env, prompt: string, model: string, isAnalyze: boolean) {

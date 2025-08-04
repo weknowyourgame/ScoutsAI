@@ -14,7 +14,7 @@ import { Label } from "./ui/label"
 import { Textarea } from "./ui/textarea"
 import { redirect } from "next/navigation"
 import SignInModal from "./ui/sign-in"
-import AllScouts from "./ActiveScouts"
+// import AllScouts from "./ActiveScouts"
 
 interface DialogProps {
     children: React.ReactNode
@@ -174,7 +174,7 @@ const Dialog = ({ children, type = 'mail' }: DialogProps) => {
                             </DialogDescription>
                         </DialogHeader>
                         <div className="mt-4">
-                            <AllScouts />
+                            {/* <AllScouts /> */}
                         </div>
                     </>
                 )

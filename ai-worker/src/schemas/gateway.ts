@@ -12,7 +12,8 @@ export const ReqSchema = z.object({
     "qwen/qwen3-32b",
     "moonshotai/kimi-k2-instruct",
     "mistral-7b-instruct",
-    "@cf/meta/llama-3.1-8b-instant"
+    "@cf/meta/llama-3.1-8b-instant",
+    "sonar",
   ]),
   prompt: z.string(),
   system_prompt: z.string().optional(),

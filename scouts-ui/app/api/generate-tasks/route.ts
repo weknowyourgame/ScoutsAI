@@ -67,6 +67,30 @@ export async function POST(request: NextRequest) {
         
         data.tasksStored = storedTasks.length;
         data.storedTasks = storedTasks;
+        
+        // Queue the first todo (Deep Research) for immediate processing
+        if (storedTasks.length > 0) {
+          try {
+            const queueResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/queue-todos`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                scoutId: scoutId
+              })
+            });
+            
+            if (queueResponse.ok) {
+              const queueData = await queueResponse.json();
+              data.todosQueued = queueData.todosQueued;
+              data.queuedTodos = queueData.queuedTodos;
+            }
+          } catch (error) {
+            console.error('Failed to queue todos:', error);
+            data.queueError = 'Failed to queue todos for processing';
+          }
+        }
       } catch (error) {
         console.error('Failed to store tasks in database:', error);
         data.error = 'Failed to store tasks in database';

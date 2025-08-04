@@ -74,14 +74,14 @@ model Todo {
 model Log {
   id        String  @id @default(cuid())
   scoutId   String
-  todoId    String
+  todoId    String?  // optional to allow scout-level logs
   agentType AgentType
   message   String
   data      Json?
   createdAt DateTime @default(now())
 
   scout Scout @relation(fields: [scoutId], references: [id], onDelete: Cascade)
-  todo Todo @relation(fields: [todoId], references: [id], onDelete: Cascade)
+  todo  Todo? @relation(fields: [todoId], references: [id], onDelete: Cascade)  // Made optional
 
   @@map("logs")
 }

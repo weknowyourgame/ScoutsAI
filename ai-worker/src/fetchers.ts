@@ -10,12 +10,25 @@ import { storeTasksInDatabase, TaskData } from "./utils/database";
 import { todoMakerPrompt } from "./prompts/todo";
 
 export async function taskFetcher(c: Context) {
-    const body = await c.req.json();
-    const input = ReqSchema.parse(body);
-    const response = await callGatewayAI(c.env, input);
-    
-    // @ts-ignore
-    return c.json(response);
+    try {
+        const body = await c.req.json();
+        console.log('Task fetcher received body:', JSON.stringify(body, null, 2));
+        
+        const input = ReqSchema.parse(body);
+        console.log('Parsed input:', JSON.stringify(input, null, 2));
+        
+        const response = await callGatewayAI(c.env, input);
+        console.log('Gateway AI response:', JSON.stringify(response, null, 2));
+        
+        return c.json(response);
+    } catch (error) {
+        console.error('Task fetcher error:', error);
+        return c.json({
+            error: 'Task processing failed',
+            message: error instanceof Error ? error.message : 'Unknown error',
+            details: error instanceof Error ? error.stack : undefined
+        }, 500);
+    }
 }
 
 export async function emailNotifier(c: Context) {
@@ -99,31 +112,7 @@ function parseTasksFromAIResponse(aiResponse: any): any[] {
         
     } catch (error) {
         console.error('Failed to parse tasks from AI response:', error);
-        // Return default tasks if parsing fails
-        return generateDefaultTasks();
+        throw new Error('Failed to generate tasks from AI response');
     }
-}
-
-function generateDefaultTasks() {
-    return [
-        {
-            title: "Initial Research",
-            description: "Research and gather initial information",
-            agentType: "SEARCH_AGENT",
-            taskType: "SINGLE_RUN"
-        },
-        {
-            title: "Continuous Monitoring",
-            description: "Monitor for updates and changes",
-            agentType: "BROWSER_AUTOMATION",
-            taskType: "CONTINUOUSLY_RUNNING"
-        },
-        {
-            title: "Alert System",
-            description: "Send notifications when conditions are met",
-            agentType: "ACTION_SCOUT",
-            taskType: "RUN_ON_CONDITION"
-        }
-    ];
 }
 
