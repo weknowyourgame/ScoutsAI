@@ -42,26 +42,48 @@ export async function POST(request: NextRequest) {
       
       if (shouldProcess) {
         try {
-          // Queue the todo for processing
-          const processResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/process-todo`, {
+          // Add todo to BullMQ queue instead of direct processing
+          const queueResponse = await fetch(`${process.env.BULLMQ_API_URL || 'http://localhost:3001'}/add-task`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              todoId: todo.id
+              todoId: todo.id,
+              scoutId: todo.scoutId,
+              userId: todo.userId,
+              title: todo.title,
+              description: todo.description,
+              agentType: todo.agentType,
+              taskType: todo.taskType,
+              condition: todo.condition,
+              scheduledFor: todo.scheduledFor,
+              goTo: todo.goTo || [],
+              search: todo.search || [],
+              actions: todo.actions || []
             })
           });
 
-          if (processResponse.ok) {
+          if (queueResponse.ok) {
+            const queueResult = await queueResponse.json();
             queuedTodos.push({
               id: todo.id,
               title: todo.title,
               agentType: todo.agentType,
-              status: 'queued'
+              status: 'queued',
+              jobId: queueResult.jobId
+            });
+            
+            // Update todo status to IN_PROGRESS
+            await prisma.todo.update({
+              where: { id: todo.id },
+              data: { 
+                status: 'IN_PROGRESS',
+                lastRunAt: new Date()
+              }
             });
           } else {
-            console.error(`Failed to queue todo ${todo.id}:`, await processResponse.text());
+            console.error(`Failed to queue todo ${todo.id}:`, await queueResponse.text());
           }
         } catch (error) {
           console.error(`Error queuing todo ${todo.id}:`, error);

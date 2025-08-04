@@ -11,16 +11,16 @@ import { todoMakerPrompt } from "./prompts/todo";
 
 export async function taskFetcher(c: Context) {
     try {
-        const body = await c.req.json();
+    const body = await c.req.json();
         console.log('Task fetcher received body:', JSON.stringify(body, null, 2));
         
-        const input = ReqSchema.parse(body);
+    const input = ReqSchema.parse(body);
         console.log('Parsed input:', JSON.stringify(input, null, 2));
         
-        const response = await callGatewayAI(c.env, input);
+    const response = await callGatewayAI(c.env, input);
         console.log('Gateway AI response:', JSON.stringify(response, null, 2));
-        
-        return c.json(response);
+    
+    return c.json(response);
     } catch (error) {
         console.error('Task fetcher error:', error);
         return c.json({
@@ -64,6 +64,9 @@ export async function generateTasks(c: Context) {
 
 async function generateTasksForScout(env: Env, input: z.infer<typeof generateTasksSchema>) {
     try {
+        console.log('Starting task generation for scout:', input.scoutId);
+        console.log('User query:', input.userQuery);
+        
         // Call AI to generate tasks
         const aiResponse = await callGatewayAI(env, {
             provider: input.provider,
@@ -72,8 +75,41 @@ async function generateTasksForScout(env: Env, input: z.infer<typeof generateTas
             system_prompt: todoMakerPrompt
         });
 
+        console.log('AI Response received:', JSON.stringify(aiResponse, null, 2));
+
         // Parse the AI response to extract tasks
         const tasks = parseTasksFromAIResponse(aiResponse);
+        
+        console.log('Successfully parsed tasks:', tasks.length);
+        
+        // Validate that we have multiple todos
+        if (tasks.length < 2) {
+            console.error('AI only generated', tasks.length, 'todos. Expected at least 2.');
+            return {
+                success: false,
+                error: `AI only generated ${tasks.length} todos. Expected at least 2 todos for comprehensive monitoring.`
+            };
+        }
+        
+        // Validate that we have browser automation tasks for price monitoring
+        const hasBrowserAutomation = tasks.some(task => task.agentType === 'BROWSER_AUTOMATION');
+        const hasActionScout = tasks.some(task => task.agentType === 'ACTION_SCOUT');
+        
+        if (!hasBrowserAutomation) {
+            console.error('No BROWSER_AUTOMATION tasks found. Adding default browser automation task.');
+            // Add a default browser automation task
+            tasks.push({
+                title: 'Monitor Flight Prices',
+                description: 'Check flight prices from major booking sites',
+                agentType: 'BROWSER_AUTOMATION',
+                taskType: 'CONTINUOUSLY_RUNNING',
+                goTo: ['https://www.google.com/travel/flights', 'https://www.kayak.com'],
+                search: ['NYC to LA flights'],
+                actions: [{'type': 'extract', 'description': 'Extract current flight prices'}],
+                condition: {},
+                scheduledFor: ''
+            });
+        }
         
         return {
             success: true,
@@ -84,6 +120,7 @@ async function generateTasksForScout(env: Env, input: z.infer<typeof generateTas
         
     } catch (error) {
         console.error('Task generation failed:', error);
+        console.error('Error details:', error instanceof Error ? error.stack : 'Unknown error');
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Unknown error'
@@ -96,22 +133,68 @@ function parseTasksFromAIResponse(aiResponse: any): any[] {
         // Extract the content from AI response
         const content = aiResponse.choices?.[0]?.message?.content;
         if (!content) {
+            console.error('No content in AI response:', aiResponse);
             throw new Error('No content in AI response');
         }
 
-        // Parse the JSON tasks from the content
-        const tasksMatch = content.match(/```json\n([\s\S]*?)\n```/);
-        if (!tasksMatch) {
+        console.log('AI Response content:', content);
+
+        // Try multiple patterns to extract JSON
+        let tasksJson = null;
+        
+        // Pattern 1: ```json ... ```
+        let tasksMatch = content.match(/```json\n([\s\S]*?)\n```/);
+        if (tasksMatch) {
+            tasksJson = tasksMatch[1];
+        }
+        
+        // Pattern 2: ``` ... ``` (without json specifier)
+        if (!tasksJson) {
+            tasksMatch = content.match(/```\n([\s\S]*?)\n```/);
+            if (tasksMatch) {
+                tasksJson = tasksMatch[1];
+            }
+        }
+        
+        // Pattern 3: Look for JSON array directly
+        if (!tasksJson) {
+            const jsonMatch = content.match(/\[[\s\S]*\]/);
+            if (jsonMatch) {
+                tasksJson = jsonMatch[0];
+            }
+        }
+        
+        // Pattern 4: Look for JSON object with tasks array
+        if (!tasksJson) {
+            const objectMatch = content.match(/\{[\s\S]*\}/);
+            if (objectMatch) {
+                try {
+                    const parsed = JSON.parse(objectMatch[0]);
+                    if (parsed.tasks && Array.isArray(parsed.tasks)) {
+                        return parsed.tasks;
+                    }
+                } catch (e) {
+                    // Continue to next pattern
+                }
+            }
+        }
+
+        if (!tasksJson) {
+            console.error('No JSON found in AI response content');
+            console.error('Content was:', content);
             throw new Error('No JSON tasks found in AI response');
         }
 
-        const tasksJson = tasksMatch[1];
+        console.log('Extracted JSON:', tasksJson);
+        
         const tasks = JSON.parse(tasksJson);
+        console.log('Parsed tasks:', tasks);
         
         return Array.isArray(tasks) ? tasks : [tasks];
         
     } catch (error) {
         console.error('Failed to parse tasks from AI response:', error);
+        console.error('AI Response was:', aiResponse);
         throw new Error('Failed to generate tasks from AI response');
     }
 }
