@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { jobsQueue, addStagehandTask, StagehandTask, testRedisConnection } from './queue';
 import { completeTaskSchema } from './schemas';
+import './worker'; // Start the worker
 
 const app = express();
 
@@ -27,7 +28,7 @@ app.post('/add-task', async (req, res) => {
     }
 
     // Validate agentType
-    const validAgentTypes = ['BROWSER_AUTOMATION', 'SEARCH_AGENT', 'PLEX_AGENT'];
+    const validAgentTypes = ['BROWSER_AUTOMATION', 'SEARCH_AGENT', 'PLEX_AGENT', 'RESEARCH_AGENT', 'ACTION_SCOUT', 'SUMMARY_AGENT'];
     if (!validAgentTypes.includes(jobData.agentType)) {
       return res.status(400).json({ 
         error: `Invalid agentType. Must be one of: ${validAgentTypes.join(', ')}` 

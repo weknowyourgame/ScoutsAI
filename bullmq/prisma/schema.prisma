@@ -1,0 +1,141 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  scouts    Scout[]
+  todos     Todo[]
+  summaries Summary[]
+
+  @@map("users")
+}
+
+// Scout here represents a single scout request from a user
+model Scout {
+  id                    String                @id @default(cuid())
+  userId                String
+  userQuery             String
+  status                ScoutStatus           @default(IN_PROGRESS)
+  notificationFrequency NotificationFrequency @default(ONCE_A_DAY)
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  todos Todo[]
+  summaries Summary[]
+  logs Log[]
+
+  @@map("scouts")
+}
+
+model Todo {
+  id            String     @id @default(cuid())
+  scoutId       String
+  userId        String
+  title         String
+  description   String?
+  agentType     AgentType
+  taskType      TaskType
+  status        TodoStatus @default(PENDING)
+  condition     Json?
+  resultData    Json       @default("{}")
+  errorMessage  String?
+  retryCount    Int        @default(0)
+  maxRetries    Int        @default(3)
+  scheduledFor  DateTime?
+  lastRunAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  goTo          String[]   @default([])  // URLs to navigate to
+  search        String[]   @default([])  // Search terms
+  actions       Json?      // Array of action objects
+
+  scout Scout @relation(fields: [scoutId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  logs  Log[]
+  summaries Summary[]
+
+  @@map("todos")
+}
+
+model Log {
+  id        String  @id @default(cuid())
+  scoutId   String
+  todoId    String?  // optional to allow scout-level logs
+  agentType AgentType
+  message   String
+  data      Json?
+  createdAt DateTime @default(now())
+
+  scout Scout @relation(fields: [scoutId], references: [id], onDelete: Cascade)
+  todo  Todo? @relation(fields: [todoId], references: [id], onDelete: Cascade)  // Made optional
+
+  @@map("logs")
+}
+
+model Summary {
+  id           String      @id @default(cuid())
+  userId       String
+  scoutId      String
+  todoId       String
+  title        String
+  content      String
+  data         Json?
+  createdAt    DateTime    @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  scout Scout @relation(fields: [scoutId], references: [id], onDelete: Cascade)
+  todo  Todo  @relation(fields: [todoId], references: [id], onDelete: Cascade)
+
+  @@map("summaries")
+}
+
+enum ScoutStatus {
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+enum AgentType {
+  ACTION_SCOUT
+  BROWSER_AUTOMATION
+  SEARCH_AGENT
+  PLEX_AGENT
+  RESEARCH_AGENT
+  SUMMARY_AGENT
+}
+
+enum TaskType {
+  SINGLE_RUN
+  CONTINUOUSLY_RUNNING
+  RUN_ON_CONDITION
+  THINKING_RESEARCH
+  FAILED_TASK_RECOVERY
+}
+
+enum TodoStatus {
+  PENDING              // A todo will fail if it exceeds the max retries
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+enum NotificationFrequency {
+  EVERY_HOUR
+  ONCE_A_DAY
+  ONCE_A_WEEK
+  AI_DECIDE
+}

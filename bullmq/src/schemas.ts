@@ -22,7 +22,7 @@ export const completeTaskSchema = z.object({
     // Browser-scout fields
     goTo: z.array(z.string()).optional(),
     search: z.array(z.string()).optional(),
-    actions: z.array(actionSchema).optional(),
+    actions: z.array(actionSchema).optional().or(z.null()),
     
     // Notification frequency
     notificationFrequency: z.enum(['EVERY_HOUR', 'ONCE_A_DAY', 'ONCE_A_WEEK', 'AI_DECIDE']).optional()
