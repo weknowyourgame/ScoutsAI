@@ -33,6 +33,7 @@ const AiInput = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [currentAnalysis, setCurrentAnalysis] = useState("")
   const [selectedNotificationOption, setSelectedNotificationOption] = useState("")
+  const [email, setEmail] = useState("")
   const analysisTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Analyze user input instantly while typing
@@ -172,7 +173,8 @@ const AiInput = ({
       // Send both the query and the selected notification frequency
       const submissionData = {
         query: inputValue,
-        notificationFrequency: selectedNotificationOption || 'ONCE_A_DAY'
+        notificationFrequency: selectedNotificationOption || 'ONCE_A_DAY',
+        email: email || undefined
       }
       
       await onSubmit?.(JSON.stringify(submissionData))
@@ -180,6 +182,7 @@ const AiInput = ({
       setShowAnalysis(false)
       setCurrentAnalysis("")
       setSelectedNotificationOption("")
+      setEmail("")
     } catch (error) {
       console.error('Error submitting:', error)
     } finally {
@@ -206,7 +209,7 @@ const AiInput = ({
   return (
     <div className={cn('w-full flex flex-col items-center justify-center relative', className)}>
       {/* Input field with FloatingMenu styling */}
-      <div className="flex items-center gap-3 w-full max-w-3xl mb-4">
+      <div className="flex flex-col gap-3 w-full max-w-3xl mb-4">
         <div className="flex-1 relative">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral-400" />
@@ -226,6 +229,20 @@ const AiInput = ({
               )}
             />
           </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Enter your email for Scout updates"
+            className={cn(
+              "w-full px-4 py-3 rounded-xl border font-medium",
+              "bg-neutral-800 text-white placeholder:text-neutral-400",
+              "focus:outline-none focus:ring-2 focus:ring-neutral-600",
+              "text-sm"
+            )}
+          />
         </div>
       </div>
 

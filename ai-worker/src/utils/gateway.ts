@@ -96,10 +96,10 @@ async function callGroqAPI(env: Env, prompt: string, model: string, isAnalyze: b
     throw new Error(`Groq API failed: ${response.status} ${response.statusText} - ${errorText}`);
   }
 
-  const data = await response.json();
-  console.log('Groq API call - Response:', JSON.stringify(data, null, 2));
+  const groqData = (await response.json()) as any;
+  console.log('Groq API call - Response:', JSON.stringify(groqData, null, 2));
   
-  return data;
+  return groqData;
 }
 
 async function callPerplexityAPI(env: Env, prompt: string, model: string, isAnalyze: boolean) {
@@ -183,22 +183,22 @@ async function callGoogleAIStudioAPI(env: Env, prompt: string, model: string, is
     throw new Error(`Google AI Studio API failed: ${response.status} ${response.statusText} - ${errorText}`);
   }
 
-  const data = await response.json();
+  const studioData = (await response.json()) as any;
   
   // Convert Google AI Studio response to OpenAI format
   // The response structure might be different, let's handle various formats
-  let content = "";
+  let content: string = "";
   
-  if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-    content = data.candidates[0].content.parts?.[0]?.text || "";
-  } else if (data.candidates && data.candidates[0] && data.candidates[0].text) {
-    content = data.candidates[0].text;
-  } else if (data.text) {
-    content = data.text;
-  } else if (data.content) {
-    content = data.content;
+  if (studioData && studioData.candidates && studioData.candidates[0] && studioData.candidates[0].content) {
+    content = studioData.candidates[0].content.parts?.[0]?.text || "";
+  } else if (studioData && studioData.candidates && studioData.candidates[0] && studioData.candidates[0].text) {
+    content = studioData.candidates[0].text;
+  } else if (studioData && (studioData as any).text) {
+    content = studioData.text as string;
+  } else if (studioData && (studioData as any).content) {
+    content = studioData.content as string;
   } else {
-    console.error('Unexpected Google AI Studio response format:', data);
+    console.error('Unexpected Google AI Studio response format:', studioData);
     content = "I'll help you research and gather information on your topic. Let me create a comprehensive search and analysis plan to find the most relevant and up-to-date information for you.";
   }
   
@@ -241,7 +241,7 @@ async function callWorkersAIAPI(env: Env, prompt: string, model: string, isAnaly
     throw new Error(`Workers AI API failed: ${response.status} ${response.statusText} - ${errorText}`);
   }
 
-  const data = await response.json();
+  const data: any = await response.json();
   
   // Convert Workers AI response to OpenAI format
   return {

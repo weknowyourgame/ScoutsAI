@@ -23,4 +23,7 @@ export async function sendEmail(c: Context, input: EmailReq) {
     const data = await res.json();
     return Response.json(data);
   }
+
+  const errText = await res.text();
+  return Response.json({ error: 'Email send failed', status: res.status, details: errText }, { status: res.status });
 }

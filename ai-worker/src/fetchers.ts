@@ -20,7 +20,7 @@ export async function taskFetcher(c: Context) {
     const response = await callGatewayAI(c.env, input);
         console.log('Gateway AI response:', JSON.stringify(response, null, 2));
     
-    return c.json(response);
+    return c.json(response as any);
     } catch (error) {
         console.error('Task fetcher error:', error);
         return c.json({
@@ -36,7 +36,7 @@ export async function emailNotifier(c: Context) {
     const input = emailReqSchema.parse(body);
     const response = await sendEmail(c, input);
 
-    return c.json(response);
+    return c.json(response as any);
 }
 
 export async function analyzeRequest(c: Context) {
@@ -47,7 +47,7 @@ export async function analyzeRequest(c: Context) {
     const response = await callGatewayAI(c.env, input);
     console.log('Gateway response:', JSON.stringify(response, null, 2));
 
-    return c.json(response);
+    return c.json(response as any);
 }
 
 export async function generateTasks(c: Context) {
@@ -69,8 +69,8 @@ async function generateTasksForScout(env: Env, input: z.infer<typeof generateTas
         
         // Call AI to generate tasks
         const aiResponse = await callGatewayAI(env, {
-            provider: input.provider,
-            model_id: input.model_id,
+            provider: input.provider as any,
+            model_id: input.model_id as any,
             prompt: input.userQuery,
             system_prompt: todoMakerPrompt
         });
@@ -91,25 +91,7 @@ async function generateTasksForScout(env: Env, input: z.infer<typeof generateTas
             };
         }
         
-        // Validate that we have browser automation tasks for price monitoring
-        const hasBrowserAutomation = tasks.some(task => task.agentType === 'BROWSER_AUTOMATION');
-        const hasActionScout = tasks.some(task => task.agentType === 'ACTION_SCOUT');
-        
-        if (!hasBrowserAutomation) {
-            console.error('No BROWSER_AUTOMATION tasks found. Adding default browser automation task.');
-            // Add a default browser automation task
-            tasks.push({
-                title: 'Monitor Flight Prices',
-                description: 'Check flight prices from major booking sites',
-                agentType: 'BROWSER_AUTOMATION',
-                taskType: 'CONTINUOUSLY_RUNNING',
-                goTo: ['https://www.google.com/travel/flights', 'https://www.kayak.com'],
-                search: ['NYC to LA flights'],
-                actions: [{'type': 'extract', 'description': 'Extract current flight prices'}],
-                condition: {},
-                scheduledFor: ''
-            });
-        }
+        // Do not inject unrelated default tasks; return exactly what AI produced
         
         return {
             success: true,

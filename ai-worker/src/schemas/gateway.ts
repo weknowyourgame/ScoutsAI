@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const ReqSchema = z.object({
-  provider: z.enum(["groq", "perplexity-ai", "google-ai-studio", "openai", "workers-ai"]),
+  provider: z.enum(["groq", "perplexity-ai", "google-ai-studio", "workers-ai"]),
   model_id: z.enum([
     "gemini-2.5-flash", 
     "gemini-2.5-pro", 

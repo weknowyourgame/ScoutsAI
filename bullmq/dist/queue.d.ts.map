@@ -1,0 +1,1 @@
+{"version":3,"file":"queue.d.ts","sourceRoot":"","sources":["../src/queue.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,KAAK,EAAE,MAAM,QAAQ,CAAC;AAC/B,OAAO,EAAE,YAAY,EAAE,MAAM,WAAW,CAAC;AAGzC,eAAO,MAAM,SAAS,2CAMpB,CAAC;AAGH,wBAAsB,mBAAmB,qBASxC;AAGD,MAAM,MAAM,aAAa,GAAG,YAAY,CAAC;AAGzC,wBAAsB,gBAAgB,CAAC,QAAQ,EAAE,aAAa,mDAQ7D"}

@@ -14,9 +14,10 @@ const connection = {
 const worker = new Worker('stagehand-tasks', async (job) => {
     console.log(`Processing job ${job.id} with data:`, job.data);
     
+    let validatedData: z.infer<typeof completeTaskSchema> | null = null;
     try {
         // Validate the job data
-        const validatedData = completeTaskSchema.parse(job.data);
+        validatedData = completeTaskSchema.parse(job.data);
         
         // Process the job using GeneralScoutAgent
         const result = await GeneralScoutAgent.processJob(validatedData);
@@ -58,16 +59,16 @@ const worker = new Worker('stagehand-tasks', async (job) => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    todoId: validatedData.todoId,
+                    todoId: (validatedData && validatedData.todoId) || job.data?.todoId || 'unknown',
                     status: 'FAILED',
                     resultData: { error: error instanceof Error ? error.message : 'Unknown error' }
                 })
             });
             
             if (updateResponse.ok) {
-                console.log(`Task ${validatedData.todoId} status updated to FAILED`);
+                console.log(`Task ${validatedData && validatedData.todoId || job.data?.todoId || 'unknown'} status updated to FAILED`);
             } else {
-                console.error(`Failed to update task ${validatedData.todoId} status to FAILED`);
+                console.error(`Failed to update task ${validatedData && validatedData.todoId || job.data?.todoId || 'unknown'} status to FAILED`);
             }
         } catch (updateError) {
             console.error('Failed to update task status to FAILED:', updateError);

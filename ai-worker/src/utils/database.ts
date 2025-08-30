@@ -29,7 +29,7 @@ export async function storeTasksInDatabase(scoutId: string, tasks: TaskData[], u
           condition: task.condition || null,
           goTo: task.goTo || [],
           search: task.search || [],
-          actions: task.actions || null,
+          actions: (task.actions as any) || undefined,
           status: 'PENDING'
         }
       });

@@ -1,5 +1,5 @@
 import { Stagehand, Page } from "@browserbasehq/stagehand";
-import StagehandConfig from "../../stagehand.config.js";
+import StagehandConfig from "../../stagehand.config.ts";
 import { completeTaskSchema } from "../schemas/types";
 import { z } from "zod";
 

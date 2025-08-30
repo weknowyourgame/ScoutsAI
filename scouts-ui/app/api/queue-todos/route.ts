@@ -231,10 +231,7 @@ async function getLatestPriceData(scoutId: string): Promise<any> {
     where: {
       scoutId: scoutId,
       status: 'COMPLETED',
-      resultData: {
-        path: ['type'],
-        equals: 'BROWSER_AUTOMATION'
-      }
+      // Use a safer filter; Prisma JSON filters vary. We'll just order by completedAt.
     },
     orderBy: {
       completedAt: 'desc'
@@ -242,11 +239,9 @@ async function getLatestPriceData(scoutId: string): Promise<any> {
   });
 
   if (latestTodo && latestTodo.resultData) {
-    // Extract price from result data
-    // This is a simplified implementation
-    return {
-      price: latestTodo.resultData.price || 0
-    };
+    const data: any = latestTodo.resultData as any;
+    const price = typeof data?.price === 'number' ? data.price : parseFloat(data?.price || '0');
+    return { price };
   }
 
   return null;

@@ -57,7 +57,6 @@ export async function POST(request: NextRequest) {
       data: {
         userId: scout.userId,
         scoutId: scoutId,
-        todoId: null, // This is the final summary, not tied to a specific todo
         title: `Final Summary: ${scout.userQuery}`,
         content: summaryContent,
         data: {
@@ -66,7 +65,7 @@ export async function POST(request: NextRequest) {
           individualSummaries: scout.summaries.length,
           scoutQuery: scout.userQuery
         }
-      }
+      } as any
     });
 
     // Update scout status to completed

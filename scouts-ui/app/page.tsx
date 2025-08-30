@@ -1,31 +1,30 @@
 'use client';
 
 import AiInput from "./components/AiInput";
-import FloatingMenu from "./components/FloatingMenu";
+import SidebarScouts from "./components/SidebarScouts";
+import ScoutChat from "./components/ScoutChat";
+import { useState } from "react";
 
 export default function Home() {
 
+  const [selectedScout, setSelectedScout] = useState<string | undefined>(undefined)
+
   return (
-    <div className="font-sans min-h-screen p-8 pb-20 relative">
-      {/* Floating menu positioned more towards middle and smaller */}
-      <div className="fixed top-1/6 left-1/10 transform -translate-x-1/2 -translate-y-1/2 z-50 scale-100">
-        <FloatingMenu />
-      </div>
-      
-      {/* Main content */}
-      <div className="flex items-center justify-center min-h-screen p-8">
-        <main className="w-full max-w-none">
-          <div className="flex flex-col gap-8 items-center w-full">
-            <div className="flex flex-col gap-4 items-center w-full">
+    <div className="font-sans min-h-screen flex">
+      <SidebarScouts onSelect={setSelectedScout} selectedId={selectedScout} />
+      <div className="flex-1 p-6">
+        <main className="w-full max-w-3xl mx-auto">
+          <div className="flex flex-col gap-6 items-center w-full">
+            <div className="w-full">
               <AiInput 
-                placeholder="Ask Scout anything..."
+                placeholder="Ask Scout anything... (e.g., Pelosi stock alerts)"
                 onSubmit={async (value) => {
                   try {
                     console.log('AI Input submitted:', value)
                     
                     // Parse the submission data
                     const submissionData = JSON.parse(value)
-                    const { query, notificationFrequency } = submissionData
+                    const { query, notificationFrequency, email } = submissionData
                     
                     // Map UI notification frequency to database enum
                     const mapNotificationFrequency = (uiValue: string) => {
@@ -51,6 +50,7 @@ export default function Home() {
                       body: JSON.stringify({
                         userQuery: query,
                         userId: 'temp-user-id', // TODO: Get from auth
+                        email,
                         notificationFrequency: mapNotificationFrequency(notificationFrequency)
                       })
                     })
@@ -61,6 +61,7 @@ export default function Home() {
                     
                     const scoutData = await scoutResponse.json()
                     console.log('Scout created:', scoutData)
+                    setSelectedScout(scoutData.scout.id)
                     
                     // Generate tasks for the scout
                     const taskResponse = await fetch('/api/generate-tasks', {
@@ -104,6 +105,9 @@ export default function Home() {
                   }
                 }}
               />
+            </div>
+            <div className="w-full mt-6">
+              <ScoutChat scoutId={selectedScout} />
             </div>
           </div>
         </main>

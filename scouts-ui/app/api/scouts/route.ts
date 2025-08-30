@@ -43,7 +43,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userQuery, userId, notificationFrequency = 'ONCE_A_DAY' } = body;
+    const { userQuery, userId, email, notificationFrequency = 'ONCE_A_DAY' } = body;
 
     // Map UI notification frequency values to database enum values
     const mapNotificationFrequency = (uiValue: string) => {
@@ -69,6 +69,15 @@ export async function POST(request: NextRequest) {
     console.log('Received notificationFrequency:', notificationFrequency);
     const mappedFrequency = mapNotificationFrequency(notificationFrequency);
     console.log('Mapped to:', mappedFrequency);
+
+    // Upsert user with email if provided (MVP)
+    if (email && userId) {
+      await prisma.user.upsert({
+        where: { id: userId },
+        update: { email },
+        create: { id: userId, email }
+      });
+    }
 
     const newScout = await prisma.scout.create({
       data: {

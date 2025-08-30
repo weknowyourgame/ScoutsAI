@@ -180,12 +180,20 @@ async function processBrowserAutomation(data: any): Promise<BrowserAutomationRes
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
+      // Required by browser-scout schema
       todoId: data.todoId,
       title: data.title,
       description: data.description,
+      agentType: 'BROWSER_AUTOMATION',
+      taskType: data.taskType || 'SINGLE_RUN',
+      userId: data.userId,
+      scoutId: data.scoutId,
+      condition: data.condition || undefined,
+      resultData: data.resultData || undefined,
       goTo: data.goTo || [],
       search: data.search || [],
-      actions: data.actions || []
+      actions: Array.isArray(data.actions) ? data.actions : [],
+      notificationFrequency: data.notificationFrequency || 'ONCE_A_DAY'
     })
   });
 

@@ -90,7 +90,7 @@ model Summary {
   id           String      @id @default(cuid())
   userId       String
   scoutId      String
-  todoId       String
+  todoId       String?
   title        String
   content      String
   data         Json?
@@ -98,7 +98,7 @@ model Summary {
 
   user  User  @relation(fields: [userId], references: [id], onDelete: SetNull)
   scout Scout @relation(fields: [scoutId], references: [id], onDelete: Cascade)
-  todo  Todo  @relation(fields: [todoId], references: [id], onDelete: Cascade)
+  todo  Todo? @relation(fields: [todoId], references: [id], onDelete: Cascade)
 
   @@map("summaries")
 }

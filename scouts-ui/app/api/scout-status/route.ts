@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
     const performanceMetrics = await getPerformanceMetrics(scoutId);
 
     // Format todos with progress information
-    const formattedTodos = scout.todos.map(todo => ({
+    const formattedTodos = scout.todos.map((todo: any) => ({
       id: todo.id,
       title: todo.title,
       description: todo.description,
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
       createdAt: todo.createdAt,
       lastRunAt: todo.lastRunAt,
       completedAt: todo.completedAt,
-      logs: todo.logs.map(log => ({
+      logs: todo.logs.map((log: any) => ({
         id: log.id,
         message: log.message,
         data: log.data,
@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
     }));
 
     // Format summaries
-    const formattedSummaries = scout.summaries.map(summary => ({
+    const formattedSummaries = scout.summaries.map((summary: any) => ({
       id: summary.id,
       title: summary.title,
       content: summary.content,
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
     }));
 
     // Format scout-level logs
-    const formattedLogs = scout.logs.map(log => ({
+    const formattedLogs = scout.logs.map((log: any) => ({
       id: log.id,
       message: log.message,
       data: log.data,
@@ -155,10 +155,7 @@ async function getPerformanceMetrics(scoutId: string) {
     const logs = await prisma.log.findMany({
       where: {
         scoutId: scoutId,
-        data: {
-          path: ['performance'],
-          not: null
-        }
+        // JSON filtering can be flaky across drivers; fetch and filter in memory
       },
       orderBy: {
         createdAt: 'desc'
@@ -166,8 +163,11 @@ async function getPerformanceMetrics(scoutId: string) {
     });
 
     const performanceData = logs
-      .map(log => log.data?.performance)
-      .filter(Boolean);
+      .map((log) => {
+        const d: any = log.data as any;
+        return d?.performance;
+      })
+      .filter((x: any) => Boolean(x));
 
     if (performanceData.length === 0) {
       return {
@@ -179,25 +179,25 @@ async function getPerformanceMetrics(scoutId: string) {
     }
 
     const totalExecutions = performanceData.length;
-    const successfulExecutions = performanceData.filter(p => p.success).length;
+    const successfulExecutions = performanceData.filter((p: any) => p.success).length;
     const successRate = (successfulExecutions / totalExecutions) * 100;
-    const averageExecutionTime = performanceData.reduce((sum, p) => sum + (p.executionTime || 0), 0) / totalExecutions;
+    const averageExecutionTime = performanceData.reduce((sum: number, p: any) => sum + (p.executionTime || 0), 0) / totalExecutions;
 
     // Agent type breakdown
-    const agentTypeBreakdown = performanceData.reduce((acc, p) => {
-      const agentType = p.agentType || 'UNKNOWN';
+    const agentTypeBreakdown = performanceData.reduce((acc: any, p: any) => {
+      const agentType = p?.agentType || 'UNKNOWN';
       if (!acc[agentType]) {
         acc[agentType] = { count: 0, successCount: 0, totalTime: 0 };
       }
       acc[agentType].count++;
-      if (p.success) acc[agentType].successCount++;
-      acc[agentType].totalTime += p.executionTime || 0;
+      if (p?.success) acc[agentType].successCount++;
+      acc[agentType].totalTime += p?.executionTime || 0;
       return acc;
     }, {} as Record<string, { count: number; successCount: number; totalTime: number }>);
 
     // Calculate averages for each agent type
-    Object.keys(agentTypeBreakdown).forEach(agentType => {
-      const data = agentTypeBreakdown[agentType];
+    Object.keys(agentTypeBreakdown).forEach((agentType: string) => {
+      const data: any = (agentTypeBreakdown as any)[agentType];
       data.successRate = (data.successCount / data.count) * 100;
       data.averageTime = data.totalTime / data.count;
     });
@@ -229,7 +229,7 @@ function getTodoProgress(todo: any) {
       status: 'completed',
       percentage: 100,
       lastActivity: todo.completedAt,
-      executionTime: logs.find(l => l.data?.performance?.executionTime)?.data?.performance?.executionTime || 0
+      executionTime: logs.find((l: any) => l.data?.performance?.executionTime)?.data?.performance?.executionTime || 0
     };
   } else if (todo.status === 'FAILED') {
     return {
@@ -244,7 +244,7 @@ function getTodoProgress(todo: any) {
       status: 'in_progress',
       percentage: 50, // Estimate
       lastActivity: todo.lastRunAt,
-      startTime: logs.find(l => l.message.includes('Started'))?.createdAt
+      startTime: logs.find((l: any) => l.message.includes('Started'))?.createdAt
     };
   } else {
     return {

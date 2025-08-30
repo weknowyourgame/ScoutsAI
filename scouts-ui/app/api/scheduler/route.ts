@@ -106,11 +106,7 @@ async function generateSummaries() {
             status: 'COMPLETED'
           }
         },
-        summaries: {
-          none: {
-            todoId: null // No final summary exists
-          }
-        }
+        // We'll check in code for existence of a final summary (todoId null) instead of JSON filter
       },
       include: {
         todos: {
@@ -126,6 +122,9 @@ async function generateSummaries() {
 
     for (const scout of scoutsToSummarize) {
       try {
+        // Skip if a final summary already exists
+        const existingFinal = await prisma.summary.findFirst({ where: { scoutId: scout.id, todoId: null as any } as any });
+        if (existingFinal) continue;
         // Check if scout is ready for final summary
         const totalTodos = await prisma.todo.count({
           where: { scoutId: scout.id }
