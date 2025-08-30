@@ -3,6 +3,113 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const bullmq_1 = require("bullmq");
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
+// Helper: get user email
+async function getUserEmail(userId) {
+    try {
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        return user?.email || null;
+    }
+    catch {
+        return null;
+    }
+}
+// Helper: should send email based on scout frequency and last send
+async function shouldSendEmail(scoutId, forceFirst) {
+    if (forceFirst)
+        return true;
+    const scout = await prisma.scout.findUnique({ where: { id: scoutId } });
+    if (!scout)
+        return false;
+    const last = await prisma.log.findFirst({
+        where: { scoutId, message: 'EMAIL_SENT' },
+        orderBy: { createdAt: 'desc' }
+    });
+    if (!last)
+        return true;
+    const now = Date.now();
+    const lastMs = new Date(last.createdAt).getTime();
+    const diffMs = now - lastMs;
+    const oneHour = 60 * 60 * 1000;
+    const oneDay = 24 * oneHour;
+    switch (scout.notificationFrequency) {
+        case 'EVERY_HOUR':
+            return diffMs >= oneHour;
+        case 'ONCE_A_DAY':
+            return diffMs >= oneDay;
+        case 'ONCE_A_WEEK':
+            return diffMs >= 7 * oneDay;
+        case 'AI_DECIDE':
+            return diffMs >= oneDay;
+        default:
+            return true;
+    }
+}
+// Helper: send email via AI Worker Resend proxy
+async function sendEmailViaWorker({ email, subject, html }) {
+    const aiWorkerUrl = process.env.AI_WORKER_URL || 'http://localhost:8787';
+    const res = await fetch(`${aiWorkerUrl}/email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, subject, body: html })
+    });
+    if (!res.ok) {
+        const txt = await res.text().catch(() => '');
+        console.warn('Email send failed:', res.status, txt);
+    }
+}
+// Helper: compose email HTML (LLM with fallback)
+async function composeEmailHTML(todo, result, isFirst) {
+    try {
+        const aiWorkerUrl = process.env.AI_WORKER_URL || 'http://localhost:8787';
+        const response = await fetch(`${aiWorkerUrl}/task`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                provider: 'perplexity-ai',
+                model_id: 'sonar',
+                prompt: `Create a short HTML email ${isFirst ? 'announcing the scout has started and' : ''} summarizing the latest update for this task.
+
+Task: ${todo.title}
+Agent: ${todo.agentType}
+Type: ${todo.taskType}
+Result JSON: ${JSON.stringify(result).slice(0, 4000)}
+
+Keep it concise with a clear headline, 3-5 bullets, and a call-to-action line.`,
+                system_prompt: 'You are an email assistant. Return clean HTML only.'
+            })
+        });
+        if (response.ok) {
+            const data = await response.json();
+            const content = data.choices?.[0]?.message?.content;
+            if (content)
+                return content;
+        }
+    }
+    catch { }
+    // Fallback template
+    return `<!doctype html><html><body style="font-family:Inter,system-ui,Arial,sans-serif;color:#111">
+  <h2>${isFirst ? 'Your Scout Has Started' : 'Scout Update'}</h2>
+  <p><strong>Task:</strong> ${todo.title}</p>
+  <pre style="white-space:pre-wrap;background:#f6f6f6;padding:12px;border-radius:8px">${result?.summaryContent || JSON.stringify(result, null, 2)}</pre>
+  <p style="color:#555">You are receiving this based on your selected frequency.</p>
+  </body></html>`;
+}
+// Notify user on first update and subsequently per frequency
+async function maybeSendEmailForTodo(todo, result) {
+    const email = await getUserEmail(todo.userId);
+    if (!email)
+        return;
+    // first completed for this scout?
+    const completedCount = await prisma.todo.count({ where: { scoutId: todo.scoutId, status: 'COMPLETED' } });
+    const isFirst = completedCount <= 1;
+    const due = await shouldSendEmail(todo.scoutId, isFirst);
+    if (!due)
+        return;
+    const subject = isFirst ? `Your Scout started: ${todo.title}` : `Scout update: ${todo.title}`;
+    const html = await composeEmailHTML(todo, result, isFirst);
+    await sendEmailViaWorker({ email, subject, html });
+    await prisma.log.create({ data: { scoutId: todo.scoutId, todoId: todo.todoId, agentType: todo.agentType, message: 'EMAIL_SENT', data: { subject } } });
+}
 // Worker to process all types of tasks
 const worker = new bullmq_1.Worker('stagehand-tasks', async (job) => {
     console.log(`Processing job ${job.id} with data:`, job.data);
@@ -43,6 +150,8 @@ const worker = new bullmq_1.Worker('stagehand-tasks', async (job) => {
         });
         // Create individual todo summary
         await createIndividualTodoSummary(job.data, result);
+        // Notify user via email (first update immediately, then per frequency)
+        await maybeSendEmailForTodo(job.data, result);
         // Update scout progress
         await updateScoutProgress(scoutId);
         console.log(`Job ${job.id} completed successfully`);
@@ -120,12 +229,20 @@ async function processBrowserAutomation(data) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
+            // Required by browser-scout schema
             todoId: data.todoId,
             title: data.title,
             description: data.description,
+            agentType: 'BROWSER_AUTOMATION',
+            taskType: data.taskType || 'SINGLE_RUN',
+            userId: data.userId,
+            scoutId: data.scoutId,
+            condition: data.condition || undefined,
+            resultData: data.resultData || undefined,
             goTo: data.goTo || [],
             search: data.search || [],
-            actions: data.actions || []
+            actions: Array.isArray(data.actions) ? data.actions : [],
+            notificationFrequency: data.notificationFrequency || 'ONCE_A_DAY'
         })
     });
     if (!response.ok) {

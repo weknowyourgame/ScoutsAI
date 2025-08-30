@@ -167,6 +167,10 @@ const AiInput = ({
 
   const handleSubmit = async () => {
     if (!inputValue.trim() || isSubmitting) return
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      alert('Please enter a valid email to receive updates.');
+      return;
+    }
     
     setIsSubmitting(true)
     try {
@@ -235,7 +239,7 @@ const AiInput = ({
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter your email for Scout updates"
+            placeholder="Enter your email for Scout updates (required)"
             className={cn(
               "w-full px-4 py-3 rounded-xl border font-medium",
               "bg-neutral-800 text-white placeholder:text-neutral-400",

@@ -12,7 +12,7 @@ export async function sendEmail(c: Context, input: EmailReq) {
       'Authorization': `Bearer ${c.env.RESEND_API_KEY}`,
     },
     body: JSON.stringify({
-      from: '<noreply@sarthakkapila.com>',
+      from: c.env.RESEND_FROM || 'Open ScoutsAI <noreply@sarthakkapila.com>',
       to: [input.email],
       subject: input.subject,
       html: input.body,
@@ -21,9 +21,9 @@ export async function sendEmail(c: Context, input: EmailReq) {
 
   if (res.ok) {
     const data = await res.json();
-    return Response.json(data);
+    return { ok: true, data };
   }
 
   const errText = await res.text();
-  return Response.json({ error: 'Email send failed', status: res.status, details: errText }, { status: res.status });
+  return { ok: false, error: 'Email send failed', status: res.status, details: errText };
 }
