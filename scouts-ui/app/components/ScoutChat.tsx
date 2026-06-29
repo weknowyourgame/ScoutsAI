@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { Activity, FileText } from 'lucide-react'
 import { getBrowserScoutStatus, subscribeToBrowserScouts } from '../lib/browser-scout-store'
 import { isBrowserLocalOnlyMode } from '../lib/local-mode'
 
@@ -54,21 +55,45 @@ export default function ScoutChat({ scoutId }: { scoutId?: string }) {
     return () => clearInterval(interval)
   }, [scoutId])
 
-  if (!scoutId) return <div className="text-neutral-500">Select a scout from the left.</div>
+  if (!scoutId) {
+    return (
+      <section className="grid gap-4 md:grid-cols-3">
+        {['Monitor any topic', 'Live artifacts', 'Signal digest'].map((title, index) => (
+          <div key={title} className="rounded-2xl border border-white/10 bg-white/[0.055] p-5 shadow-sm">
+            <div className="mb-8 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#050706]">
+              {index === 1 ? <FileText className="h-4 w-4" /> : <Activity className="h-4 w-4" />}
+            </div>
+            <div className="text-lg font-semibold text-white">{title}</div>
+            <p className="mt-2 text-sm leading-6 text-white/58">
+              {index === 0 ? 'Tell it what to watch in natural language.' : index === 1 ? 'Keep dashboards and notes updated as the world changes.' : 'Get updates only when there is something worth knowing.'}
+            </p>
+          </div>
+        ))}
+      </section>
+    )
+  }
+
   return (
-    <div className="w-full space-y-3">
-      {loading && <div className="text-xs text-neutral-500">Loading updates...</div>}
+    <section className="rounded-2xl border border-white/10 bg-white/[0.055] p-5 shadow-sm">
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <div className="text-xs uppercase text-white/45">Live workspace</div>
+          <div className="text-xl font-semibold text-white">Scout activity</div>
+        </div>
+        {loading && <div className="text-xs text-white/45">Loading...</div>}
+      </div>
+      <div className="space-y-3">
       {messages.map((m, i) => (
-        <div key={i} className="p-3 border border-neutral-800 rounded">
-          <div className="text-xs text-neutral-500 mb-1">{m.type.toUpperCase()}</div>
-          <div className="text-sm font-semibold mb-1">{m.title}</div>
-          <div className="text-sm whitespace-pre-wrap break-words">{m.content}</div>
+        <div key={i} className="rounded-xl border border-white/10 bg-black/20 p-4">
+          <div className="mb-2 text-[10px] font-semibold uppercase text-white/45">{m.type.toUpperCase()}</div>
+          <div className="mb-1 text-sm font-semibold text-white">{m.title}</div>
+          <div className="whitespace-pre-wrap break-words text-sm leading-6 text-white/58">{m.content}</div>
         </div>
       ))}
       {(!loading && messages.length === 0) && (
-        <div className="text-xs text-neutral-500">No messages yet. Tasks will appear here.</div>
+        <div className="rounded-xl border border-dashed border-white/10 p-6 text-sm text-white/45">Tasks will appear here.</div>
       )}
-    </div>
+      </div>
+    </section>
   )
 }
-
