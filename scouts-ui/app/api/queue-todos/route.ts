@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { getPendingLocalTodos, markLocalTodosInProgress } from '@/app/lib/local-store';
+import { isServerLocalOnlyMode } from '@/app/lib/local-mode';
 
 const prisma = new PrismaClient();
 
@@ -17,6 +18,17 @@ export async function POST(request: NextRequest) {
         { error: 'Missing required field: scoutId' },
         { status: 400 }
       );
+    }
+
+    if (isServerLocalOnlyMode()) {
+      const localTodos = getPendingLocalTodos(scoutId);
+      return NextResponse.json({
+        success: true,
+        localOnly: true,
+        message: `Local browser/dev mode skipped server queue for ${localTodos.length} todos`,
+        todosQueued: 0,
+        queuedTodos: []
+      });
     }
 
     // Get all pending todos for the scout

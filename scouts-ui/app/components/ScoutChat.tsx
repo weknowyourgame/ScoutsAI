@@ -1,5 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { getBrowserScoutStatus, subscribeToBrowserScouts } from '../lib/browser-scout-store'
+import { isBrowserLocalOnlyMode } from '../lib/local-mode'
 
 export default function ScoutChat({ scoutId }: { scoutId?: string }) {
   const [messages, setMessages] = useState<any[]>([])
@@ -10,6 +12,21 @@ export default function ScoutChat({ scoutId }: { scoutId?: string }) {
     setLoading(true)
     const load = async () => {
       try {
+        if (isBrowserLocalOnlyMode()) {
+          const data = getBrowserScoutStatus(scoutId)
+          const msgs: any[] = []
+          for (const t of data?.todos || []) {
+            msgs.push({
+              type: 'task',
+              title: t.title,
+              content: t.description || JSON.stringify({ search: t.search, status: t.status }),
+              at: t.createdAt
+            })
+          }
+          setMessages(msgs)
+          return
+        }
+
         const res = await fetch(`/api/scout-status?scoutId=${scoutId}`, { cache: 'no-store' })
         const data = await res.json()
         const msgs: any[] = []
@@ -29,6 +46,10 @@ export default function ScoutChat({ scoutId }: { scoutId?: string }) {
       }
     }
     load()
+    if (isBrowserLocalOnlyMode()) {
+      return subscribeToBrowserScouts(load)
+    }
+
     const interval = setInterval(load, 3000)
     return () => clearInterval(interval)
   }, [scoutId])
@@ -50,5 +71,4 @@ export default function ScoutChat({ scoutId }: { scoutId?: string }) {
     </div>
   )
 }
-
 

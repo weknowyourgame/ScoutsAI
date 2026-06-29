@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { createLocalScout, listLocalScouts } from '@/app/lib/local-store';
+import { isServerLocalOnlyMode } from '@/app/lib/local-mode';
 
 const prisma = new PrismaClient();
 
 export async function GET() {
+  if (isServerLocalOnlyMode()) {
+    return NextResponse.json({ scouts: listLocalScouts(), localOnly: true });
+  }
+
   try {
     const allScouts = await prisma.scout.findMany({
       where: {
@@ -67,6 +72,13 @@ export async function POST(request: NextRequest) {
     console.log('Received notificationFrequency:', notificationFrequency);
     const mappedFrequency = mapNotificationFrequency(notificationFrequency);
     console.log('Mapped to:', mappedFrequency);
+
+    if (isServerLocalOnlyMode()) {
+      return NextResponse.json({
+        scout: createLocalScout({ userId, userQuery, email, notificationFrequency: mappedFrequency }),
+        localOnly: true
+      });
+    }
 
     try {
       // Upsert user with email if provided (MVP)

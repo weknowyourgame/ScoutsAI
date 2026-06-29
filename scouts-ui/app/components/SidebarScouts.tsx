@@ -1,5 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { isBrowserLocalOnlyMode } from '../lib/local-mode'
+import { listBrowserScouts, subscribeToBrowserScouts } from '../lib/browser-scout-store'
 
 type Scout = {
   id: string
@@ -14,6 +16,11 @@ export default function SidebarScouts({ onSelect, selectedId }: { onSelect: (id:
   const load = async () => {
     setLoading(true)
     try {
+      if (isBrowserLocalOnlyMode()) {
+        setScouts(listBrowserScouts())
+        return
+      }
+
       const res = await fetch('/api/scouts', { cache: 'no-store' })
       const data = await res.json()
       setScouts(data.scouts || [])
@@ -24,7 +31,12 @@ export default function SidebarScouts({ onSelect, selectedId }: { onSelect: (id:
     }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+    if (isBrowserLocalOnlyMode()) {
+      return subscribeToBrowserScouts(load)
+    }
+  }, [])
 
   return (
     <div className="w-72 h-full border-r border-neutral-800 p-3 overflow-y-auto">
@@ -51,5 +63,4 @@ export default function SidebarScouts({ onSelect, selectedId }: { onSelect: (id:
     </div>
   )
 }
-
 

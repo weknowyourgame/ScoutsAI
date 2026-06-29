@@ -5,6 +5,8 @@ import SidebarScouts from "./components/SidebarScouts";
 import ScoutChat from "./components/ScoutChat";
 import { useState } from "react";
 import { getOrCreateLocalScoutUser } from "./lib/local-user";
+import { addBrowserTodos, createBrowserScout } from "./lib/browser-scout-store";
+import { isBrowserLocalOnlyMode } from "./lib/local-mode";
 
 export default function Home() {
 
@@ -43,27 +45,19 @@ export default function Home() {
                       return mapping[uiValue] || 'ONCE_A_DAY';
                     };
                     
-                    // Create scout in database
-                    const scoutResponse = await fetch('/api/scouts', {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                      },
-                      body: JSON.stringify({
+                    const scoutPayload = {
                         userQuery: query,
                         userId: localUser.id,
                         email: localUser.email,
                         notificationFrequency: mapNotificationFrequency(notificationFrequency)
-                      })
-                    })
-                    
-                    if (!scoutResponse.ok) {
-                      throw new Error('Failed to create scout')
-                    }
-                    
-                    const scoutData = await scoutResponse.json()
-                    console.log('Scout created:', scoutData)
-                    setSelectedScout(scoutData.scout.id)
+                      };
+
+                    const scout = isBrowserLocalOnlyMode()
+                      ? createBrowserScout(scoutPayload)
+                      : await createServerScout(scoutPayload);
+
+                    console.log('Scout created:', scout)
+                    setSelectedScout(scout.id)
                     
                     // Generate tasks for the scout
                     const taskResponse = await fetch('/api/generate-tasks', {
@@ -72,7 +66,7 @@ export default function Home() {
                         'Content-Type': 'application/json',
                       },
                       body: JSON.stringify({
-                        scoutId: scoutData.scout.id,
+                        scoutId: scout.id,
                         userQuery: query,
                         userId: localUser.id
                       })
@@ -83,6 +77,9 @@ export default function Home() {
                     }
                     
                     const taskData = await taskResponse.json()
+                    if (isBrowserLocalOnlyMode() && taskData.tasks?.length) {
+                      addBrowserTodos(scout.id, localUser.id, taskData.tasks)
+                    }
                     console.log('Tasks generated:', taskData)
                     
                   } catch (error) {
@@ -99,4 +96,26 @@ export default function Home() {
       </div>
     </div>
   );
+}
+
+async function createServerScout(payload: {
+  userQuery: string;
+  userId: string;
+  email?: string;
+  notificationFrequency: string;
+}) {
+  const scoutResponse = await fetch('/api/scouts', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!scoutResponse.ok) {
+    throw new Error('Failed to create scout');
+  }
+
+  const scoutData = await scoutResponse.json();
+  return scoutData.scout;
 }

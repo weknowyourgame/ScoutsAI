@@ -10,3 +10,6 @@ dist/
 
 !.env.example
 !.dev.vars.example
+
+!scouts-ui/app/lib/
+!scouts-ui/app/lib/**

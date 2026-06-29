@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { addLocalTodos } from '@/app/lib/local-store';
+import { isServerLocalOnlyMode } from '@/app/lib/local-mode';
 
 export async function POST(request: NextRequest) {
   let fallbackScoutId: string | undefined;
@@ -48,6 +49,14 @@ export async function POST(request: NextRequest) {
     
     // If tasks were generated successfully, store them in the database
     if (data.success && data.tasks && data.tasks.length > 0) {
+      if (isServerLocalOnlyMode()) {
+        const storedTasks = addLocalTodos(scoutId, userId, data.tasks);
+        data.tasksStored = storedTasks.length;
+        data.storedTasks = storedTasks;
+        data.localOnly = true;
+        return NextResponse.json(data);
+      }
+
       const { PrismaClient } = await import('@prisma/client');
       const prisma = new PrismaClient();
       let storedTasks = [];

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { getLocalScoutStatus } from '@/app/lib/local-store';
+import { isServerLocalOnlyMode } from '@/app/lib/local-mode';
 
 const prisma = new PrismaClient();
 
@@ -13,6 +14,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { error: 'Missing scoutId parameter' },
         { status: 400 }
+      );
+    }
+
+    if (isServerLocalOnlyMode()) {
+      const localStatus = getLocalScoutStatus(scoutId);
+      if (localStatus) {
+        return NextResponse.json(localStatus);
+      }
+      return NextResponse.json(
+        { error: 'Scout not found' },
+        { status: 404 }
       );
     }
 
