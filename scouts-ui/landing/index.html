@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Invoicely — Create Beautiful Invoices</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;600&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --background: oklch(0.141 0.005 285.823);
+      --foreground: oklch(0.98 0 0);
+      --border: oklch(1 0 0 / 10%);
+      --muted: oklch(0.274 0.006 286.033);
+      --muted-foreground: oklch(0.51 0.015 286.067);
+      --secondary: oklch(0.274 0.006 286.033);
+      --secondary-foreground: oklch(0.98 0 0);
+      --primary: oklch(0.58 0.2346 278.29);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { color-scheme: dark; }
+
+    body {
+      font-family: 'Geist', sans-serif;
+      background-color: #0f0f12;
+      color: #fafafa;
+      overscroll-behavior: none;
+      min-height: 100dvh;
+    }
+
+    .instrument-serif { font-family: 'Instrument Serif', serif; }
+    .jetbrains-mono { font-family: 'JetBrains Mono', monospace; }
+    .urbanist { font-family: 'Geist', sans-serif; }
+
+    .new-container {
+      margin-left: auto;
+      margin-right: auto;
+      display: flex;
+      max-width: 1000px;
+      flex-direction: column;
+      border-left: 1px dashed rgba(255,255,255,0.1);
+      border-right: 1px dashed rgba(255,255,255,0.1);
+      min-height: 100dvh;
+    }
+
+    .border-dashed-custom { border-color: rgba(255,255,255,0.1) !important; }
+
+    /* Header */
+    .header {
+      display: flex;
+      height: 64px;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px dashed rgba(255,255,255,0.1);
+      padding: 0 1rem;
+    }
+
+    .logo-link {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .logo-text {
+      font-family: 'Instrument Serif', serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .header-right {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    /* Theme Switch */
+    .theme-switch {
+      cursor: pointer;
+      background: none;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 0.4rem;
+      padding: 0.35rem 0.5rem;
+      color: #fafafa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+    .theme-switch:hover { background: rgba(255,255,255,0.05); }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-radius: 0.5rem;
+      padding: 0.4rem 0.875rem;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+      transition: opacity 0.15s;
+      box-shadow: inset 0px 1.5px 0px rgba(255,255,255,0.15);
+    }
+    .btn:hover { opacity: 0.85; }
+
+    .btn-primary {
+      background: oklch(0.58 0.2346 278.29);
+      color: #fff;
+    }
+
+    .btn-secondary {
+      background: oklch(0.274 0.006 286.033);
+      color: #fafafa;
+    }
+
+    .btn-white {
+      background: #fff;
+      color: #111;
+      font-size: 0.75rem;
+      padding: 0.25rem 0.6rem;
+    }
+
+    /* Hero */
+    .hero {
+      position: relative;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      overflow: hidden;
+      border-bottom: 1px dashed rgba(255,255,255,0.1);
+      height: calc(100svh - 64px - 150px);
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .hero-bg img {
+      width: 100%;
+      height: 100%;
+      min-height: 100%;
+      object-fit: cover;
+      object-position: left;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .hero-star-badge {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0 1.5rem;
+    }
+
+    .star-pill {
+      position: relative;
+      display: flex;
+      height: 1.75rem;
+      width: 4rem;
+      flex-direction: row;
+      align-items: center;
+      gap: 0.5rem;
+      border-radius: 0.375rem;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.05);
+      padding: 0 0.5rem;
+    }
+
+    .star-count {
+      font-family: 'Geist', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 600;
+      position: absolute;
+      right: 0.4rem;
+    }
+
+    .star-line {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+    }
+
+    .star-dot {
+      height: 0.375rem;
+      width: 0.375rem;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .star-gradient-line {
+      height: 1px;
+      width: 10rem;
+      background: linear-gradient(to right, rgba(255,255,255,0.1), transparent);
+    }
+
+    .hero-headline {
+      font-family: 'Instrument Serif', serif;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 0 1.5rem;
+      font-size: clamp(2.5rem, 6vw, 3.75rem);
+      line-height: 1.1;
+    }
+
+    .hero-headline h1 { color: rgba(250,250,250,0.3); }
+    .hero-headline h1 span { color: #fafafa; }
+    .hero-headline h2 { color: rgba(250,250,250,0.3); }
+    .hero-headline h2 span { color: #fafafa; }
+
+    .hero-ctas {
+      margin-top: 1rem;
+      display: flex;
+      flex-direction: row;
+      gap: 1rem;
+      padding: 0 1.5rem;
+    }
+
+    .github-wrapper {
+      position: relative;
+    }
+
+    .github-tooltip {
+      font-family: 'JetBrains Mono', monospace;
+      color: rgba(255,255,255,0.15);
+      pointer-events: none;
+      position: absolute;
+      top: -2.5rem;
+      left: 10rem;
+      font-size: 0.625rem;
+      transform: rotate(-34deg);
+      white-space: nowrap;
+      line-height: 1.4;
+    }
+
+    /* Features */
+    .features {
+      display: grid;
+      grid-template-columns: 1fr;
+      border-bottom: 1px dashed rgba(255,255,255,0.1);
+    }
+
+    @media (min-width: 640px) {
+      .features {
+        grid-template-columns: repeat(3, 1fr);
+        height: 150px;
+      }
+    }
+
+    .feature-card {
+      display: flex;
+      height: 10rem;
+      flex-direction: column;
+      gap: 0.75rem;
+      border-bottom: 1px dashed rgba(255,255,255,0.1);
+      padding: 1rem;
+    }
+
+    @media (min-width: 640px) {
+      .feature-card { height: auto; border-bottom: none; }
+      .feature-card + .feature-card { border-left: 1px dashed rgba(255,255,255,0.1); }
+    }
+
+    .feature-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .feature-desc {
+      font-size: 0.78rem;
+      color: rgba(250,250,250,0.45);
+      line-height: 1.5;
+    }
+
+    /* Sponsors */
+    .sponsors-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border-bottom: 1px dashed rgba(255,255,255,0.1);
+      padding: 1rem 0;
+    }
+
+    .fancy-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: rgba(250,250,250,0.5);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 99px;
+      padding: 0.2rem 0.75rem;
+      position: relative;
+    }
+
+    .fancy-badge::before,
+    .fancy-badge::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 2rem;
+      height: 1px;
+      background: rgba(255,255,255,0.1);
+    }
+    .fancy-badge::before { right: calc(100% + 0.5rem); }
+    .fancy-badge::after { left: calc(100% + 0.5rem); }
+
+    .sponsor-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      border-bottom: 1px dashed rgba(255,255,255,0.1);
+    }
+
+    @media (min-width: 640px) {
+      .sponsor-row {
+        grid-template-columns: 2fr 1fr;
+        min-height: 150px;
+      }
+    }
+
+    .sponsor-info {
+      display: flex;
+      flex-direction: column;
+      padding: 1.5rem;
+      gap: 0.4rem;
+    }
+
+    .sponsor-info.order-right {
+      order: 1;
+    }
+
+    @media (min-width: 640px) {
+      .sponsor-info.order-right { order: unset; }
+    }
+
+    .sponsor-logo-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      border-top: 1px dashed rgba(255,255,255,0.1);
+    }
+
+    @media (min-width: 640px) {
+      .sponsor-logo-cell {
+        border-top: none;
+        border-left: 1px dashed rgba(255,255,255,0.1);
+      }
+      .sponsor-logo-cell.border-right {
+        border-left: none;
+        border-right: 1px dashed rgba(255,255,255,0.1);
+      }
+    }
+
+    .sponsor-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .sponsor-label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: rgba(250,250,250,0.35);
+      margin-left: 0.5rem;
+    }
+
+    .sponsor-desc {
+      font-size: 0.75rem;
+      color: rgba(250,250,250,0.4);
+      line-height: 1.55;
+      margin-top: 0.25rem;
+    }
+
+    .sponsor-logo {
+      max-height: 5rem;
+      max-width: 10rem;
+      object-fit: contain;
+    }
+
+    .sponsor-logo.invert { filter: invert(1); }
+
+    .bg-dashed-pattern {
+      background-image: linear-gradient(
+        45deg,
+        rgba(255,255,255,0.08) 12.5%,
+        transparent 12.5%,
+        transparent 50%,
+        rgba(255,255,255,0.08) 50%,
+        rgba(255,255,255,0.08) 62.5%,
+        transparent 62.5%,
+        transparent 100%
+      );
+      background-size: 0.25rem 0.25rem;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0.375rem;
+      min-height: 5rem;
+      padding: 1.25rem 2.5rem;
+    }
+
+    .placeholder-text {
+      font-family: 'JetBrains Mono', monospace;
+      background: #0f0f12;
+      color: rgba(250,250,250,0.3);
+      border-radius: 0.25rem;
+      padding: 0.25rem 0.5rem;
+      text-align: center;
+      font-size: 0.75rem;
+    }
+
+    /* Footer SVG */
+    .footer-container {
+      display: flex;
+      height: 130px;
+      align-items: center;
+      overflow: hidden;
+      padding: 0 1rem;
+      cursor: crosshair;
+    }
+
+    @media (min-width: 640px) {
+      .footer-container {
+        height: auto;
+        padding: 0;
+      }
+    }
+
+    footer svg { width: 100%; }
+
+    /* Light mode overrides */
+    html:not(.dark) {
+      --bg: #ffffff;
+      --fg: #111111;
+      --border-color: rgba(0,0,0,0.1);
+    }
+
+    html:not(.dark) body { background-color: #ffffff; color: #111111; }
+    html:not(.dark) .new-container { border-color: rgba(0,0,0,0.1); }
+    html:not(.dark) .header { border-color: rgba(0,0,0,0.1); }
+    html:not(.dark) .hero { border-color: rgba(0,0,0,0.1); }
+    html:not(.dark) .hero-bg img { filter: invert(1); }
+    html:not(.dark) .hero-headline h1 { color: rgba(15,15,18,0.4); }
+    html:not(.dark) .hero-headline h1 span { color: #0f0f12; }
+    html:not(.dark) .hero-headline h2 { color: rgba(15,15,18,0.4); }
+    html:not(.dark) .hero-headline h2 span { color: #0f0f12; }
+    html:not(.dark) .star-pill { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.1); }
+    html:not(.dark) .star-dot { background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.1); }
+    html:not(.dark) .star-gradient-line { background: linear-gradient(to right, rgba(0,0,0,0.1), transparent); }
+    html:not(.dark) .github-tooltip { color: rgba(0,0,0,0.15); }
+    html:not(.dark) .features { border-color: rgba(0,0,0,0.1); }
+    html:not(.dark) .feature-card { border-color: rgba(0,0,0,0.1); }
+    html:not(.dark) .feature-card + .feature-card { border-color: rgba(0,0,0,0.1); }
+    html:not(.dark) .feature-desc { color: rgba(15,15,18,0.45); }
+    html:not(.dark) .sponsors-header { border-color: rgba(0,0,0,0.1); }
+    html:not(.dark) .fancy-badge { border-color: rgba(0,0,0,0.1); color: rgba(15,15,18,0.5); }
+    html:not(.dark) .fancy-badge::before,
+    html:not(.dark) .fancy-badge::after { background: rgba(0,0,0,0.1); }
+    html:not(.dark) .sponsor-row { border-color: rgba(0,0,0,0.1); }
+    html:not(.dark) .sponsor-logo-cell { border-color: rgba(0,0,0,0.1); }
+    html:not(.dark) .sponsor-logo-cell.border-right { border-color: rgba(0,0,0,0.1); }
+    html:not(.dark) .sponsor-label { color: rgba(15,15,18,0.35); }
+    html:not(.dark) .sponsor-desc { color: rgba(15,15,18,0.45); }
+    html:not(.dark) .sponsor-logo.invert { filter: invert(0); }
+    html:not(.dark) .bg-dashed-pattern { background-image: linear-gradient(45deg, rgba(0,0,0,0.08) 12.5%, transparent 12.5%, transparent 50%, rgba(0,0,0,0.08) 50%, rgba(0,0,0,0.08) 62.5%, transparent 62.5%, transparent 100%); }
+    html:not(.dark) .placeholder-text { background: #ffffff; color: rgba(15,15,18,0.35); }
+    html:not(.dark) .btn-secondary { background: #f0f0f2; color: #111; }
+    html:not(.dark) .theme-switch { border-color: rgba(0,0,0,0.1); color: #111; }
+    html:not(.dark) .theme-switch:hover { background: rgba(0,0,0,0.04); }
+    html:not(.dark) footer svg path[fill="url(#text-gradient)"] { stroke: #ddd; }
+
+    /* SVG footer light mode */
+    html:not(.dark) #footer-svg-paths { stroke: #ddd; }
+    html:not(.dark) #text-fill-gradient stop:last-child { stop-color: #ddd; }
+  </style>
+</head>
+<body>
+  <div class="new-container">
+
+    <!-- HEADER -->
+    <header class="header">
+      <a class="logo-link" href="#">
+        <img src="logo-icon.png" alt="Invoicely logo" width="32" height="32" />
+        <span class="logo-text">Invoicely</span>
+      </a>
+      <div class="header-right">
+        <button class="theme-switch" id="themeToggle" aria-label="Toggle theme">
+          <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+        <a href="#" class="btn btn-secondary">
+          <span>Invoice It</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(-45deg)">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 8 16 12 12 16"/>
+            <line x1="8" y1="12" x2="16" y2="12"/>
+          </svg>
+        </a>
+      </div>
+    </header>
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-bg">
+        <img src="invoicely-masked-background.png" alt="Hero background" />
+      </div>
+      <div class="hero-content">
+        <div class="hero-star-badge">
+          <div class="star-pill">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#eab308" stroke="#eab308" stroke-width="1.5">
+              <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
+            </svg>
+            <span class="star-count urbanist" id="starCount">—</span>
+          </div>
+          <div class="star-line">
+            <div class="star-dot"></div>
+            <div class="star-gradient-line"></div>
+          </div>
+        </div>
+        <div class="hero-headline">
+          <h1>Create <span>Beautiful</span> Invoices</h1>
+          <h2>Not <span>Ugly</span> Ones</h2>
+        </div>
+        <div class="hero-ctas">
+          <a href="#" class="btn btn-primary">
+            <span>Get Started</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(-45deg)">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 8 16 12 12 16"/><line x1="8" y1="12" x2="16" y2="12"/>
+            </svg>
+          </a>
+          <div class="github-wrapper">
+            <a href="https://github.com/legions-developer/invoicely" target="_blank" class="btn btn-secondary">
+              <span>Open Source</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+              </svg>
+            </a>
+            <span class="github-tooltip">Give Star <br/> please :3 <br/> for cookie</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section class="features">
+      <div class="feature-card">
+        <div class="feature-title">Beautiful</div>
+        <div class="feature-desc">Professionally designed and visually appealing invoices can increase the chances of clients paying promptly.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-title">Free &amp; Unlimited</div>
+        <div class="feature-desc">Create and send as many invoices as you need — no limits, no hidden costs, just seamless billing freedom.</div>
+      </div>
+      <div class="feature-card" style="border-bottom:none;">
+        <div class="feature-title">Safe &amp; Open Source</div>
+        <div class="feature-desc">Your data stays yours — we never track, sell, or share it. Store everything locally or securely on our server — the choice is yours.</div>
+      </div>
+    </section>
+
+    <!-- SPONSORS -->
+    <section>
+      <div class="sponsors-header">
+        <span class="fancy-badge">Our Sponsors</span>
+      </div>
+
+      <!-- Vercel -->
+      <div class="sponsor-row">
+        <div class="sponsor-info order-right">
+          <div>
+            <span class="sponsor-title">Vercel</span>
+            <span class="sponsor-label">Open Source Program</span>
+          </div>
+          <p class="sponsor-desc">Vercel is a platform for building modern web applications. It provides a seamless development experience with a focus on performance and scalability. Vercel provides the developer tools and cloud infrastructure to build, scale, and secure a faster, more personalized web.</p>
+        </div>
+        <div class="sponsor-logo-cell border-right">
+          <img class="sponsor-logo invert" src="https://assets.vercel.com/image/upload/front/favicon/vercel/180x180.png" alt="Vercel" onerror="this.outerHTML='<div style=\'font-weight:600;font-size:1.5rem;letter-spacing:-0.04em\'>▲ Vercel</div>'" />
+        </div>
+      </div>
+
+      <!-- NeonDB -->
+      <div class="sponsor-row">
+        <div class="sponsor-logo-cell">
+          <img class="sponsor-logo" src="neondb.svg" alt="NeonDB" />
+        </div>
+        <div class="sponsor-info">
+          <div>
+            <span class="sponsor-title">NeonDB</span>
+            <span class="sponsor-label">Best Database Service</span>
+          </div>
+          <p class="sponsor-desc">NeonDB is a modern, open-source database that provides a seamless database. The database developers trust, on a serverless platform designed to help you build reliable and scalable applications faster.</p>
+        </div>
+      </div>
+
+      <!-- Cloudflare -->
+      <div class="sponsor-row">
+        <div class="sponsor-info order-right">
+          <div>
+            <span class="sponsor-title">Cloudflare</span>
+            <span class="sponsor-label">Open Source Program</span>
+          </div>
+          <p class="sponsor-desc">Cloudflare is a global CDN that provides a secure and fast way to deliver content to your users. Cloudflare make websites, apps, and networks faster and more secure. Our developer platform is the best place to build modern apps and deliver AI initiatives.</p>
+        </div>
+        <div class="sponsor-logo-cell border-right">
+          <img class="sponsor-logo" src="https://www.cloudflare.com/img/logo-cloudflare-dark.svg" alt="Cloudflare" onerror="this.style.display='none'" />
+        </div>
+      </div>
+
+      <!-- Your Company Here -->
+      <div class="sponsor-row">
+        <div class="sponsor-logo-cell">
+          <div class="bg-dashed-pattern">
+            <span class="placeholder-text jetbrains-mono">Your Image Here</span>
+          </div>
+        </div>
+        <div class="sponsor-info">
+          <div>
+            <span class="sponsor-title">Your Company Here</span>
+            <span class="sponsor-label">Free Sponsor</span>
+          </div>
+          <p class="sponsor-desc">Invoicely is free for everyone—forever. If you'd like to sponsor us with a service that benefits our platform and users, contact us below.</p>
+          <div style="margin-top:0.25rem">
+            <a href="mailto:admin@legions.dev" class="btn btn-white">Contact Us</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+      <div class="footer-container" id="footerContainer">
+        <svg id="footerSvg" width="100%" height="213" viewBox="0 0 932 213" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <g id="footer-svg-paths" stroke="#2C2C2C" stroke-linejoin="round">
+            <path
+              d="M33.375 43V171H14.0625V43H33.375ZM164.813 43V171H147.062L82 77.125H80.8125V171H61.5V43H79.375L144.5 137H145.687V43H164.813ZM204.172 43L239.797 147.25H241.234L276.859 43H297.734L251.672 171H229.359L183.297 43H204.172ZM421.047 107C421.047 120.667 418.547 132.417 413.547 142.25C408.547 152.042 401.693 159.583 392.984 164.875C384.318 170.125 374.464 172.75 363.422 172.75C352.339 172.75 342.443 170.125 333.734 164.875C325.068 159.583 318.234 152.021 313.234 142.187C308.234 132.354 305.734 120.625 305.734 107C305.734 93.3333 308.234 81.6042 313.234 71.8125C318.234 61.9792 325.068 54.4375 333.734 49.1875C342.443 43.8958 352.339 41.25 363.422 41.25C374.464 41.25 384.318 43.8958 392.984 49.1875C401.693 54.4375 408.547 61.9792 413.547 71.8125C418.547 81.6042 421.047 93.3333 421.047 107ZM401.922 107C401.922 96.5833 400.234 87.8125 396.859 80.6875C393.526 73.5208 388.943 68.1042 383.109 64.4375C377.318 60.7292 370.755 58.875 363.422 58.875C356.047 58.875 349.464 60.7292 343.672 64.4375C337.88 68.1042 333.297 73.5208 329.922 80.6875C326.589 87.8125 324.922 96.5833 324.922 107C324.922 117.417 326.589 126.208 329.922 133.375C333.297 140.5 337.88 145.917 343.672 149.625C349.464 153.292 356.047 155.125 363.422 155.125C370.755 155.125 377.318 153.292 383.109 149.625C388.943 145.917 393.526 140.5 396.859 133.375C400.234 126.208 401.922 117.417 401.922 107ZM464.438 43V171H445.125V43H464.438ZM598.875 84.625H579.375C578.625 80.4583 577.229 76.7917 575.188 73.625C573.146 70.4583 570.646 67.7708 567.688 65.5625C564.729 63.3542 561.417 61.6875 557.75 60.5625C554.125 59.4375 550.271 58.875 546.188 58.875C538.813 58.875 532.208 60.7292 526.375 64.4375C520.583 68.1458 516 73.5833 512.625 80.75C509.292 87.9167 507.625 96.6667 507.625 107C507.625 117.417 509.292 126.208 512.625 133.375C516 140.542 520.604 145.958 526.437 149.625C532.271 153.292 538.833 155.125 546.125 155.125C550.167 155.125 554 154.583 557.625 153.5C561.292 152.375 564.604 150.729 567.563 148.562C570.521 146.396 573.021 143.75 575.062 140.625C577.146 137.458 578.583 133.833 579.375 129.75L598.875 129.812C597.833 136.104 595.813 141.896 592.813 147.187C589.854 152.438 586.042 156.979 581.375 160.812C576.75 164.604 571.458 167.542 565.5 169.625C559.542 171.708 553.042 172.75 546 172.75C534.917 172.75 525.042 170.125 516.375 164.875C507.708 159.583 500.875 152.021 495.875 142.187C490.917 132.354 488.438 120.625 488.438 107C488.438 93.3333 490.938 81.6042 495.938 71.8125C500.938 61.9792 507.771 54.4375 516.438 49.1875C525.104 43.8958 534.958 41.25 546 41.25C552.792 41.25 559.125 42.2292 565 44.1875C570.917 46.1042 576.229 48.9375 580.938 52.6875C585.646 56.3958 589.542 60.9375 592.625 66.3125C595.708 71.6458 597.792 77.75 598.875 84.625ZM621.984 171V43H702.234V59.625H641.297V98.625H698.047V115.187H641.297V154.375H702.984V171H621.984ZM728.031 171V43H747.344V154.375H805.344V171H728.031ZM808.047 43H829.984L863.422 101.187H864.797L898.234 43H920.172L873.734 120.75V171H854.484V120.75L808.047 43Z"
+              fill="url(#text-gradient)"
+              stroke="#2C2C2C"
+            />
+            <path d="M87 35H68L61 42.5H79.5L87 35ZM87 35L145.5 121"/>
+            <path d="M81 171.5L89 165V88"/>
+            <path d="M145 42.5L151 35H172M172 35L165.5 42.5M172 35V166L165 171.5"/>
+            <path d="M40 36H21L13.5 42.5H34M40 36L34 42.5M40 36V164L34 171.5V42.5"/>
+            <path d="M182.5 42.5L189 35H211.5M211.5 35L204.5 42.5M211.5 35L245.5 134M276.5 42.5L283 35H307.5M307.5 35L298.5 42.5M307.5 35L261 166L252 171.5"/>
+            <path d="M327.5 52.9999C334.333 43.9999 355.9 27.8999 387.5 35.4999C427 44.9999 430.949 95.7487 427.5 112.5C424 129.5 419.5 138.5 409 151M339 69C331.5 85.8333 323.7 124.1 352.5 142.5C358.5 146 381 151 393.5 139"/>
+            <path d="M470.5 36H451.5L444.618 42.5H465M470.5 36L465 42.5M470.5 36V164L465 171.5V42.5"/>
+            <path d="M506 57C514.833 44.3334 542 23.2 580 40C591.5 45.5 602.5 57 606.5 78L599.5 85M606.5 122.5H586L579 129.5H599L606.5 122.5ZM606.5 122.5C604.5 138.9 593.333 150.667 588 154.5M525 66C516.167 84.3333 506.9 126 540.5 146C553 152 573 145.5 577.5 135"/>
+            <path d="M709.5 35.5H628.5L621.5 42.5H702.5M709.5 35.5L702.5 42.5M709.5 35.5V53L702.5 60V42.5M649 115.5V147M649 147H710.5M649 147L642 154M710.5 147L703.5 154M710.5 147V164.5L703.5 172M649 60V91M649 91L641.5 98.5M649 91H705.5M705.5 91L698.5 98.5M705.5 91V108.5L698.5 116"/>
+            <path d="M727.5 42.5L734.5 35.5H755M755 35.5L748 42.5M755 35.5V147M755 147L748 154M755 147H813M813 147L805.5 154.5M813 147V164.5L806 171.5"/>
+            <path d="M807 42.5L814 35.5H837M837 35.5L830 42.5M837 35.5L869.5 91.5M898 42.5L907.5 35.5H931.5M931.5 35.5L921 42.5M931.5 35.5L881.5 120.5V164.5L874.5 171.5"/>
+          </g>
+          <g mask="url(#stroke-mask)">
+            <circle id="glow-circle" cx="466" cy="106" r="90" fill="url(#circle-rgb-gradient)" filter="url(#blur-filter)" />
+          </g>
+          <defs>
+            <filter id="blur-filter" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="25"/>
+            </filter>
+            <mask id="stroke-mask">
+              <g stroke="white" stroke-linejoin="round" fill="none" opacity="0.6">
+                <path d="M33.375 43V171H14.0625V43H33.375ZM164.813 43V171H147.062L82 77.125H80.8125V171H61.5V43H79.375L144.5 137H145.687V43H164.813ZM204.172 43L239.797 147.25H241.234L276.859 43H297.734L251.672 171H229.359L183.297 43H204.172ZM421.047 107C421.047 120.667 418.547 132.417 413.547 142.25C408.547 152.042 401.693 159.583 392.984 164.875C384.318 170.125 374.464 172.75 363.422 172.75C352.339 172.75 342.443 170.125 333.734 164.875C325.068 159.583 318.234 152.021 313.234 142.187C308.234 132.354 305.734 120.625 305.734 107C305.734 93.3333 308.234 81.6042 313.234 71.8125C318.234 61.9792 325.068 54.4375 333.734 49.1875C342.443 43.8958 352.339 41.25 363.422 41.25C374.464 41.25 384.318 43.8958 392.984 49.1875C401.693 54.4375 408.547 61.9792 413.547 71.8125C418.547 81.6042 421.047 93.3333 421.047 107ZM401.922 107C401.922 96.5833 400.234 87.8125 396.859 80.6875C393.526 73.5208 388.943 68.1042 383.109 64.4375C377.318 60.7292 370.755 58.875 363.422 58.875C356.047 58.875 349.464 60.7292 343.672 64.4375C337.88 68.1042 333.297 73.5208 329.922 80.6875C326.589 87.8125 324.922 96.5833 324.922 107C324.922 117.417 326.589 126.208 329.922 133.375C333.297 140.5 337.88 145.917 343.672 149.625C349.464 153.292 356.047 155.125 363.422 155.125C370.755 155.125 377.318 153.292 383.109 149.625C388.943 145.917 393.526 140.5 396.859 133.375C400.234 126.208 401.922 117.417 401.922 107ZM464.438 43V171H445.125V43H464.438ZM598.875 84.625H579.375C578.625 80.4583 577.229 76.7917 575.188 73.625C573.146 70.4583 570.646 67.7708 567.688 65.5625C564.729 63.3542 561.417 61.6875 557.75 60.5625C554.125 59.4375 550.271 58.875 546.188 58.875C538.813 58.875 532.208 60.7292 526.375 64.4375C520.583 68.1458 516 73.5833 512.625 80.75C509.292 87.9167 507.625 96.6667 507.625 107C507.625 117.417 509.292 126.208 512.625 133.375C516 140.542 520.604 145.958 526.437 149.625C532.271 153.292 538.833 155.125 546.125 155.125C550.167 155.125 554 154.583 557.625 153.5C561.292 152.375 564.604 150.729 567.563 148.562C570.521 146.396 573.021 143.75 575.062 140.625C577.146 137.458 578.583 133.833 579.375 129.75L598.875 129.812C597.833 136.104 595.813 141.896 592.813 147.187C589.854 152.438 586.042 156.979 581.375 160.812C576.75 164.604 571.458 167.542 565.5 169.625C559.542 171.708 553.042 172.75 546 172.75C534.917 172.75 525.042 170.125 516.375 164.875C507.708 159.583 500.875 152.021 495.875 142.187C490.917 132.354 488.438 120.625 488.438 107C488.438 93.3333 490.938 81.6042 495.938 71.8125C500.938 61.9792 507.771 54.4375 516.438 49.1875C525.104 43.8958 534.958 41.25 546 41.25C552.792 41.25 559.125 42.2292 565 44.1875C570.917 46.1042 576.229 48.9375 580.938 52.6875C585.646 56.3958 589.542 60.9375 592.625 66.3125C595.708 71.6458 597.792 77.75 598.875 84.625ZM621.984 171V43H702.234V59.625H641.297V98.625H698.047V115.187H641.297V154.375H702.984V171H621.984ZM728.031 171V43H747.344V154.375H805.344V171H728.031ZM808.047 43H829.984L863.422 101.187H864.797L898.234 43H920.172L873.734 120.75V171H854.484V120.75L808.047 43Z" fill="none"/>
+                <path d="M87 35H68L61 42.5H79.5L87 35ZM87 35L145.5 121"/>
+                <path d="M81 171.5L89 165V88"/>
+                <path d="M145 42.5L151 35H172M172 35L165.5 42.5M172 35V166L165 171.5"/>
+                <path d="M40 36H21L13.5 42.5H34M40 36L34 42.5M40 36V164L34 171.5V42.5"/>
+                <path d="M182.5 42.5L189 35H211.5M211.5 35L204.5 42.5M211.5 35L245.5 134M276.5 42.5L283 35H307.5M307.5 35L298.5 42.5M307.5 35L261 166L252 171.5"/>
+                <path d="M327.5 52.9999C334.333 43.9999 355.9 27.8999 387.5 35.4999C427 44.9999 430.949 95.7487 427.5 112.5C424 129.5 419.5 138.5 409 151M339 69C331.5 85.8333 323.7 124.1 352.5 142.5C358.5 146 381 151 393.5 139"/>
+                <path d="M470.5 36H451.5L444.618 42.5H465M470.5 36L465 42.5M470.5 36V164L465 171.5V42.5"/>
+                <path d="M506 57C514.833 44.3334 542 23.2 580 40C591.5 45.5 602.5 57 606.5 78L599.5 85M606.5 122.5H586L579 129.5H599L606.5 122.5ZM606.5 122.5C604.5 138.9 593.333 150.667 588 154.5M525 66C516.167 84.3333 506.9 126 540.5 146C553 152 573 145.5 577.5 135"/>
+                <path d="M709.5 35.5H628.5L621.5 42.5H702.5M709.5 35.5L702.5 42.5M709.5 35.5V53L702.5 60V42.5M649 115.5V147M649 147H710.5M649 147L642 154M710.5 147L703.5 154M710.5 147V164.5L703.5 172M649 60V91M649 91L641.5 98.5M649 91H705.5M705.5 91L698.5 98.5M705.5 91V108.5L698.5 116"/>
+                <path d="M727.5 42.5L734.5 35.5H755M755 35.5L748 42.5M755 35.5V147M755 147L748 154M755 147H813M813 147L805.5 154.5M813 147V164.5L806 171.5"/>
+                <path d="M807 42.5L814 35.5H837M837 35.5L830 42.5M837 35.5L869.5 91.5M898 42.5L907.5 35.5H931.5M931.5 35.5L921 42.5M931.5 35.5L881.5 120.5V164.5L874.5 171.5"/>
+              </g>
+            </mask>
+            <linearGradient id="text-gradient" x1="463" y1="0" x2="463" y2="171" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#2C2C2C" stop-opacity="0"/>
+              <stop offset="1" stop-color="#2C2C2C" stop-opacity="0.25"/>
+            </linearGradient>
+            <linearGradient id="circle-rgb-gradient" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0.125" stop-color="#FF0000"/>
+              <stop offset="0.26" stop-color="#FFA500"/>
+              <stop offset="0.39" stop-color="#FFFF00"/>
+              <stop offset="0.52" stop-color="#008000"/>
+              <stop offset="0.65" stop-color="#0000FF"/>
+              <stop offset="0.78" stop-color="#4B0082"/>
+              <stop offset="0.91" stop-color="#EE82EE"/>
+              <stop offset="1" stop-color="#FF0000"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    // Theme toggle
+    const html = document.documentElement;
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+
+    const sunIcon = `<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`;
+    const moonIcon = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
+
+    let isDark = true;
+
+    themeToggle.addEventListener('click', () => {
+      isDark = !isDark;
+      if (isDark) {
+        html.classList.add('dark');
+        themeIcon.innerHTML = moonIcon;
+      } else {
+        html.classList.remove('dark');
+        themeIcon.innerHTML = sunIcon;
+      }
+    });
+
+    // GitHub stars
+    fetch('https://api.github.com/repos/legions-developer/invoicely')
+      .then(r => r.json())
+      .then(d => {
+        if (d.stargazers_count !== undefined) {
+          document.getElementById('starCount').textContent = d.stargazers_count.toLocaleString();
+        }
+      })
+      .catch(() => {
+        document.getElementById('starCount').textContent = '★';
+      });
+
+    // Footer glow circle — mouse tracking + auto-loop
+    const container = document.getElementById('footerContainer');
+    const circle = document.getElementById('glow-circle');
+    const SVG_W = 932, SVG_H = 213;
+
+    let cx = SVG_W / 2, cy = SVG_H / 2;
+    let targetX = SVG_W, targetY = SVG_H * 0.8;
+    let smoothX = cx, smoothY = cy;
+    let hovered = false;
+    let loopDir = 1;
+    let loopDirY = 1;
+    let raf;
+
+    const SPRING = 0.12;
+
+    function tick() {
+      if (!hovered) {
+        targetX += loopDir * 1.2;
+        if (targetX >= SVG_W || targetX <= 0) loopDir *= -1;
+        targetY += loopDirY * 0.7;
+        if (targetY >= SVG_H * 0.85 || targetY <= SVG_H * 0.15) loopDirY *= -1;
+      }
+      smoothX += (targetX - smoothX) * SPRING;
+      smoothY += (targetY - smoothY) * SPRING;
+      circle.setAttribute('cx', smoothX);
+      circle.setAttribute('cy', smoothY);
+      raf = requestAnimationFrame(tick);
+    }
+
+    tick();
+
+    container.addEventListener('mousemove', e => {
+      const rect = container.getBoundingClientRect();
+      targetX = ((e.clientX - rect.left) / rect.width) * SVG_W;
+      targetY = ((e.clientY - rect.top) / rect.height) * SVG_H;
+    });
+    container.addEventListener('mouseenter', () => { hovered = true; });
+    container.addEventListener('mouseleave', () => { hovered = false; });
+  </script>
+</body>
+</html>
