@@ -45,15 +45,8 @@
 	 */
 	// "services": [{ "binding": "MY_SERVICE", "service": "my-service" }]
 ,
-  "vars": {
-    "AI_GATEWAY_URL": "${AI_GATEWAY_URL}",
-    "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}",
-    "CLOUDFLARE_API_TOKEN": "${CLOUDFLARE_API_TOKEN}",
-    "RESEND_API_KEY": "${RESEND_API_KEY}",
-    "SCOUTS_APP_URL": "${SCOUTS_APP_URL}",
-    "BROWSER_SCOUT_URL": "${BROWSER_SCOUT_URL}",
-    "SCOUTS_INTERNAL_API_TOKEN": "${SCOUTS_INTERNAL_API_TOKEN}"
-  },
+  // Local values belong in .dev.vars. Production secrets should be configured
+  // with `wrangler secret put` or dashboard environment variables.
   "queues": {
     "producers": [
       { "binding": "SCOUTS_TASK_QUEUE", "queue": "scouts-tasks" }

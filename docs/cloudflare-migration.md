@@ -29,11 +29,34 @@ This follows Stud's model:
 - `AI_GATEWAY_URL` is optional. When set, requests use `${AI_GATEWAY_URL}/openrouter/chat/completions`.
 - `CLOUDFLARE_API_TOKEN` is only required if the Cloudflare AI Gateway requires authentication.
 - Database credentials remain separate per app and should not be copied from Stud.
+- Local Worker development uses `ai-worker/.dev.vars`, not `wrangler.jsonc` placeholder variables.
+
+## Local Development
+
+Run the three active services with Bun:
+
+```bash
+cd ai-worker
+cp .dev.vars.example .dev.vars
+bun run dev
+```
+
+```bash
+cd scouts-ui
+cp .env.example .env.local
+bun run dev
+```
+
+```bash
+cd browser-scout
+bun run start
+```
+
+The frontend calls the Worker at `http://localhost:8787`. If the Worker, OpenRouter key, or local database is unavailable, the UI falls back to local development responses so the main create/list/status flow still works.
 
 ## Remaining Work
 
 - Move final DB writes out of Next API only if a Cloudflare-compatible Prisma strategy is already approved.
 - Remove BullMQ once Cloudflare Queue processing is verified.
 - Remove old provider-specific AI env vars and code paths.
-- Add a real local mock store for DB-free frontend development.
 - Add tests for task generation, queue enqueue, queue consume, and status update callbacks.

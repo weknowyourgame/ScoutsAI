@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { createLocalScout, listLocalScouts } from '@/app/lib/local-store';
 
 const prisma = new PrismaClient();
 
@@ -32,11 +33,8 @@ export async function GET() {
     console.log(`Found ${allScouts.length} scouts with todos`);
     return NextResponse.json({ scouts: allScouts });
   } catch (error) {
-    console.error('Error fetching scouts:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch scouts' },
-      { status: 500 }
-    );
+    console.warn('Using local scouts list fallback:', error instanceof Error ? error.message : error);
+    return NextResponse.json({ scouts: listLocalScouts(), localOnly: true });
   }
 }
 
@@ -70,32 +68,40 @@ export async function POST(request: NextRequest) {
     const mappedFrequency = mapNotificationFrequency(notificationFrequency);
     console.log('Mapped to:', mappedFrequency);
 
-    // Upsert user with email if provided (MVP)
-    if (email && userId) {
-      await prisma.user.upsert({
-        where: { id: userId },
-        update: { email },
-        create: { id: userId, email }
-      });
-    }
+    try {
+      // Upsert user with email if provided (MVP)
+      if (email && userId) {
+        await prisma.user.upsert({
+          where: { id: userId },
+          update: { email },
+          create: { id: userId, email }
+        });
+      }
 
-    const newScout = await prisma.scout.create({
-      data: {
-        userId,
-        userQuery,
-        notificationFrequency: mappedFrequency as any,
-        status: 'IN_PROGRESS'
-      },
-      include: {
-        user: {
-          select: {
-            email: true
+      const newScout = await prisma.scout.create({
+        data: {
+          userId,
+          userQuery,
+          notificationFrequency: mappedFrequency as any,
+          status: 'IN_PROGRESS'
+        },
+        include: {
+          user: {
+            select: {
+              email: true
+            }
           }
         }
-      }
-    });
+      });
 
-    return NextResponse.json({ scout: newScout });
+      return NextResponse.json({ scout: newScout });
+    } catch (error) {
+      console.warn('Database scout creation failed, using local store:', error instanceof Error ? error.message : error);
+      return NextResponse.json({
+        scout: createLocalScout({ userId, userQuery, email, notificationFrequency: mappedFrequency }),
+        localOnly: true
+      });
+    }
   } catch (error) {
     console.error('Error creating scout:', error);
     return NextResponse.json(
@@ -103,4 +109,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

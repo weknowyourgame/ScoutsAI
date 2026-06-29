@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { addLocalTodos } from '@/app/lib/local-store';
 
 export async function POST(request: NextRequest) {
+  let fallbackScoutId: string | undefined;
+  let fallbackUserQuery: string | undefined;
+  let fallbackUserId = 'test-user-local';
+
   try {
     const body = await request.json();
     const { scoutId, userQuery, userId = 'test-user-local' } = body;
+    fallbackScoutId = scoutId;
+    fallbackUserQuery = userQuery;
+    fallbackUserId = userId;
 
     if (!scoutId || !userQuery) {
       return NextResponse.json(
@@ -42,9 +50,9 @@ export async function POST(request: NextRequest) {
     if (data.success && data.tasks && data.tasks.length > 0) {
       const { PrismaClient } = await import('@prisma/client');
       const prisma = new PrismaClient();
+      let storedTasks = [];
       
       try {
-        const storedTasks = [];
         for (const task of data.tasks) {
           const storedTask = await prisma.todo.create({
             data: {
@@ -66,46 +74,92 @@ export async function POST(request: NextRequest) {
         
         data.tasksStored = storedTasks.length;
         data.storedTasks = storedTasks;
-        
-        // Queue the first todo (Deep Research) for immediate processing
-        if (storedTasks.length > 0) {
-          try {
-            const queueResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/queue-todos`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                    scoutId: scoutId
-              })
-            });
-            
-            if (queueResponse.ok) {
-              const queueData = await queueResponse.json();
-              data.todosQueued = queueData.todosQueued;
-              data.queuedTodos = queueData.queuedTodos;
-            }
-          } catch (error) {
-            console.error('Failed to queue todos:', error);
-            data.queueError = 'Failed to queue todos for processing';
-          }
-        }
       } catch (error) {
         console.error('Failed to store tasks in database:', error);
-        data.error = 'Failed to store tasks in database';
+        storedTasks = addLocalTodos(scoutId, userId, data.tasks);
+        data.tasksStored = storedTasks.length;
+        data.storedTasks = storedTasks;
+        data.localOnly = true;
+        data.warning = 'Database unavailable; stored tasks in local dev memory';
       } finally {
         await prisma.$disconnect();
+      }
+
+      if (storedTasks.length > 0) {
+        try {
+          const queueResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/queue-todos`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              scoutId: scoutId
+            })
+          });
+
+          if (queueResponse.ok) {
+            const queueData = await queueResponse.json();
+            data.todosQueued = queueData.todosQueued;
+            data.queuedTodos = queueData.queuedTodos;
+          }
+        } catch (error) {
+          console.error('Failed to queue todos:', error);
+          data.queueError = 'Failed to queue todos for processing';
+        }
       }
     }
 
     return NextResponse.json(data);
 
   } catch (error) {
-    console.error('Task generation error:', error);
+    console.warn('Task generation fallback:', error instanceof Error ? error.message : error);
+
+    if (fallbackScoutId && fallbackUserQuery) {
+      const tasks = fallbackTasksForQuery(fallbackUserQuery);
+      const storedTasks = addLocalTodos(fallbackScoutId, fallbackUserId, tasks);
+
+      try {
+        await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/queue-todos`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ scoutId: fallbackScoutId })
+        });
+      } catch (queueError) {
+        console.warn('Failed to queue fallback todos:', queueError instanceof Error ? queueError.message : queueError);
+      }
+
+      return NextResponse.json({
+        success: true,
+        scoutId: fallbackScoutId,
+        tasksGenerated: tasks.length,
+        tasks,
+        tasksStored: storedTasks.length,
+        storedTasks,
+        localOnly: true,
+        warning: error instanceof Error ? error.message : 'AI worker unavailable'
+      });
+    }
 
     return NextResponse.json(
       { error: 'Task generation failed', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
+}
+
+function fallbackTasksForQuery(userQuery: string) {
+  return [
+    {
+      title: `Research updates for: ${userQuery}`,
+      description: 'Local fallback task created because AI task generation is unavailable.',
+      agentType: 'RESEARCH_AGENT',
+      taskType: 'SINGLE_RUN',
+      condition: null,
+      goTo: [],
+      search: [userQuery],
+      actions: null
+    }
+  ];
 }

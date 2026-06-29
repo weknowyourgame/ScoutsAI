@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { getPendingLocalTodos, markLocalTodosInProgress } from '@/app/lib/local-store';
 
 const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
+  let scoutIdForFallback: string | undefined;
+
   try {
     const body = await request.json();
     const { scoutId } = body;
+    scoutIdForFallback = scoutId;
 
     if (!scoutId) {
       return NextResponse.json(
@@ -99,12 +103,67 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Todo queuing error:', error);
-    
+    console.warn('Todo queuing fallback:', error instanceof Error ? error.message : error);
+
+    if (scoutIdForFallback) {
+      const localTodos = getPendingLocalTodos(scoutIdForFallback);
+      const queuedTodos = [];
+
+      for (const todo of localTodos) {
+        try {
+          const queueApiUrl = (process.env.SCOUTS_QUEUE_API_URL || process.env.AI_WORKER_URL || 'http://localhost:8787').replace(/\/$/, '');
+          const queueResponse = await fetch(`${queueApiUrl}/queue-task`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              todoId: todo.id,
+              scoutId: todo.scoutId,
+              userId: todo.userId,
+              title: todo.title,
+              description: todo.description,
+              agentType: todo.agentType,
+              taskType: todo.taskType,
+              condition: todo.condition,
+              scheduledFor: todo.scheduledFor,
+              goTo: todo.goTo || [],
+              search: todo.search || [],
+              actions: todo.actions || []
+            })
+          });
+
+          if (queueResponse.ok) {
+            const queueResult = await queueResponse.json();
+            queuedTodos.push({
+              id: todo.id,
+              title: todo.title,
+              agentType: todo.agentType,
+              status: 'queued',
+              jobId: queueResult.todoId || todo.id
+            });
+          }
+        } catch (queueError) {
+          console.warn(`Error queuing local todo ${todo.id}:`, queueError instanceof Error ? queueError.message : queueError);
+        }
+      }
+
+      markLocalTodosInProgress(queuedTodos.map((todo) => todo.id));
+
+      return NextResponse.json({
+        success: true,
+        localOnly: true,
+        message: `Queued ${queuedTodos.length} local todos for processing`,
+        todosQueued: queuedTodos.length,
+        queuedTodos,
+        warning: error instanceof Error ? error.message : 'Database unavailable'
+      });
+    }
+
     return NextResponse.json(
-      { 
-        error: 'Todo queuing failed', 
-        message: error instanceof Error ? error.message : 'Unknown error' 
+      {
+        error: 'Todo queuing failed',
+        message: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
     );

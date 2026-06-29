@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { getLocalScoutStatus } from '@/app/lib/local-store';
 
 const prisma = new PrismaClient();
 
@@ -50,6 +51,11 @@ export async function GET(request: NextRequest) {
     });
 
     if (!scout) {
+      const localStatus = getLocalScoutStatus(scoutId);
+      if (localStatus) {
+        return NextResponse.json(localStatus);
+      }
+
       return NextResponse.json(
         { error: 'Scout not found' },
         { status: 404 }
@@ -137,7 +143,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(response);
 
   } catch (error) {
-    console.error('Scout status error:', error);
+    console.warn('Scout status fallback:', error instanceof Error ? error.message : error);
+
+    const scoutId = new URL(request.url).searchParams.get('scoutId');
+    const localStatus = scoutId ? getLocalScoutStatus(scoutId) : null;
+    if (localStatus) {
+      return NextResponse.json(localStatus);
+    }
     
     return NextResponse.json(
       { 
@@ -253,4 +265,4 @@ function getTodoProgress(todo: any) {
       lastActivity: null
     };
   }
-} 
+}

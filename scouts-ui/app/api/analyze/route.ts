@@ -30,22 +30,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(data)
     
   } catch (error) {
-    console.error('Analyze API error:', error)
-    
-    // If it's a connection error, return a better fallback response
-    if (error instanceof Error && error.message.includes('fetch')) {
-      return NextResponse.json({
-        choices: [{
-          message: {
-            content: "I'll help you research and gather information on your topic. Let me create a comprehensive search and analysis plan to find the most relevant and up-to-date information for you."
-          }
-        }]
-      })
-    }
-    
-    return NextResponse.json(
-      { error: 'Analysis failed', message: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
+    console.warn('Analyze fallback:', error instanceof Error ? error.message : error)
+
+    return NextResponse.json({
+      choices: [{
+        message: {
+          content: "I'll help monitor this request and look for the most relevant updates."
+        }
+      }],
+      localOnly: true,
+      warning: error instanceof Error ? error.message : 'AI worker unavailable'
+    })
   }
-} 
+}

@@ -1,0 +1,20 @@
+# Copy this file to .dev.vars for `bun run dev`.
+# Do not commit real .dev.vars files.
+
+OPENROUTER_API_KEY=your-openrouter-api-key
+
+# Optional Cloudflare AI Gateway.
+# Requests go to: ${AI_GATEWAY_URL}/openrouter/chat/completions
+AI_GATEWAY_URL=https://gateway.ai.cloudflare.com/v1/test-account/scouts-ai
+
+# Optional: only needed if the Cloudflare AI Gateway requires auth.
+CLOUDFLARE_API_TOKEN=your-cloudflare-api-token
+
+# Local service URLs.
+SCOUTS_APP_URL=http://localhost:3000
+BROWSER_SCOUT_URL=http://localhost:3002
+SCOUTS_INTERNAL_API_TOKEN=test-internal-token
+
+# Optional: email notifications.
+RESEND_API_KEY=your-resend-api-key
+RESEND_FROM=ScoutsAI <noreply@example.com>

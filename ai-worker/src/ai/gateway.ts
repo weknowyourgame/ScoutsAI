@@ -40,13 +40,22 @@ function metadataHeaders(userId?: string, scoutId?: string): Record<string, stri
   };
 }
 
+function usableEnvValue(value?: string) {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.includes("${") || trimmed.startsWith("your-")) {
+    return undefined;
+  }
+  return trimmed;
+}
+
 function resolveUrlAndHeaders(env: AiEnv, userId?: string, scoutId?: string) {
-  const openRouterKey = env.OPENROUTER_API_KEY;
+  const openRouterKey = usableEnvValue(env.OPENROUTER_API_KEY);
   if (!openRouterKey) {
     throw new Error("Scouts model access is unavailable: missing OPENROUTER_API_KEY");
   }
 
-  const gatewayBase = (env.AI_GATEWAY_URL ?? "").replace(/\/$/, "");
+  const gatewayBase = usableEnvValue(env.AI_GATEWAY_URL)?.replace(/\/$/, "");
   const headers: Record<string, string> = {
     Authorization: `Bearer ${openRouterKey}`,
     "Content-Type": "application/json",
@@ -56,10 +65,19 @@ function resolveUrlAndHeaders(env: AiEnv, userId?: string, scoutId?: string) {
   };
 
   if (gatewayBase) {
-    if (env.CLOUDFLARE_API_TOKEN) {
-      headers["cf-aig-authorization"] = `Bearer ${env.CLOUDFLARE_API_TOKEN}`;
+    const gatewayUrl = `${gatewayBase}/openrouter/chat/completions`;
+    try {
+      new URL(gatewayUrl);
+    } catch {
+      console.warn(`Ignoring invalid AI_GATEWAY_URL: ${gatewayBase}`);
+      return { url: OPENROUTER_DIRECT_URL, headers };
     }
-    return { url: `${gatewayBase}/openrouter/chat/completions`, headers };
+
+    const cloudflareToken = usableEnvValue(env.CLOUDFLARE_API_TOKEN);
+    if (cloudflareToken) {
+      headers["cf-aig-authorization"] = `Bearer ${cloudflareToken}`;
+    }
+    return { url: gatewayUrl, headers };
   }
 
   return { url: OPENROUTER_DIRECT_URL, headers };
