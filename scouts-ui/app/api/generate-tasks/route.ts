@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { scoutId, userQuery } = body;
+    const { scoutId, userQuery, userId = 'test-user-local' } = body;
 
     if (!scoutId || !userQuery) {
       return NextResponse.json(
@@ -25,8 +25,7 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         scoutId,
         userQuery,
-        provider: 'groq',
-        model_id: 'llama-3.1-8b-instant'
+        userId
       })
     });
 
@@ -50,7 +49,7 @@ export async function POST(request: NextRequest) {
           const storedTask = await prisma.todo.create({
             data: {
               scoutId: scoutId,
-              userId: 'temp-user-id', // TODO: Get from auth
+              userId,
               title: task.title,
               description: task.description,
               agentType: task.agentType,
@@ -77,7 +76,7 @@ export async function POST(request: NextRequest) {
                 'Content-Type': 'application/json'
               },
               body: JSON.stringify({
-                scoutId: scoutId
+                    scoutId: scoutId
               })
             });
             
@@ -98,15 +97,15 @@ export async function POST(request: NextRequest) {
         await prisma.$disconnect();
       }
     }
-    
+
     return NextResponse.json(data);
-    
+
   } catch (error) {
     console.error('Task generation error:', error);
-    
+
     return NextResponse.json(
       { error: 'Task generation failed', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
-} 
+}

@@ -6,8 +6,9 @@ import { emailReqSchema } from "./schemas/email";
 import { analyzeReqSchema } from "./schemas/analyze";
 import { generateTasksSchema } from "./schemas/generate-tasks";
 import { z } from "zod";
-import { storeTasksInDatabase, TaskData } from "./utils/database";
 import { todoMakerPrompt } from "./prompts/todo";
+import { enqueueTask } from "./queue";
+import { generatedTasksSchema } from "./schemas/task";
 
 export async function taskFetcher(c: Context) {
     try {
@@ -32,34 +33,46 @@ export async function taskFetcher(c: Context) {
 }
 
 export async function emailNotifier(c: Context) {
-    const body = await c.req.json();
-    const input = emailReqSchema.parse(body);
-    const response = await sendEmail(c, input);
-
-    return c.json(response as any);
+    try {
+        const body = await c.req.json();
+        const input = emailReqSchema.parse(body);
+        const response = await sendEmail(c, input);
+        return c.json(response as any);
+    } catch (error) {
+        return c.json({ error: 'Email send failed', message: error instanceof Error ? error.message : 'Unknown error' }, 500);
+    }
 }
 
 export async function analyzeRequest(c: Context) {
-    const body = await c.req.json();
-    
-    const input = analyzeReqSchema.parse(body);
-    
-    const response = await callGatewayAI(c.env, input);
-    console.log('Gateway response:', JSON.stringify(response, null, 2));
-
-    return c.json(response as any);
+    try {
+        const body = await c.req.json();
+        const input = analyzeReqSchema.parse(body);
+        const response = await callGatewayAI(c.env, input);
+        return c.json(response as any);
+    } catch (error) {
+        return c.json({ error: 'Analysis failed', message: error instanceof Error ? error.message : 'Unknown error' }, 500);
+    }
 }
 
 export async function generateTasks(c: Context) {
-    const body = await c.req.json();
-    
-    const input = generateTasksSchema.parse(body);
-    
-    // Call the task generation logic
-    const response = await generateTasksForScout(c.env, input);
-    console.log('Task generation response:', JSON.stringify(response, null, 2));
+    try {
+        const body = await c.req.json();
+        const input = generateTasksSchema.parse(body);
+        const response = await generateTasksForScout(c.env, input);
+        return c.json(response);
+    } catch (error) {
+        return c.json({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }, 500);
+    }
+}
 
-    return c.json(response);
+export async function queueTask(c: Context) {
+    try {
+        const body = await c.req.json();
+        const result = await enqueueTask(c.env, body);
+        return c.json(result, result.success ? 200 : 503);
+    } catch (error) {
+        return c.json({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }, 400);
+    }
 }
 
 async function generateTasksForScout(env: Env, input: z.infer<typeof generateTasksSchema>) {
@@ -69,25 +82,24 @@ async function generateTasksForScout(env: Env, input: z.infer<typeof generateTas
         
         // Call AI to generate tasks
         const aiResponse = await callGatewayAI(env, {
-            provider: input.provider as any,
-            model_id: input.model_id as any,
+            profile: "task-generator",
             prompt: input.userQuery,
-            system_prompt: todoMakerPrompt
+            system_prompt: todoMakerPrompt,
+            userId: input.userId,
+            scoutId: input.scoutId
         });
 
         console.log('AI Response received:', JSON.stringify(aiResponse, null, 2));
 
         // Parse the AI response to extract tasks
-        const tasks = parseTasksFromAIResponse(aiResponse);
+        const tasks = generatedTasksSchema.parse(parseTasksFromAIResponse(aiResponse));
         
         console.log('Successfully parsed tasks:', tasks.length);
         
-        // Validate that we have multiple todos
-        if (tasks.length < 2) {
-            console.error('AI only generated', tasks.length, 'todos. Expected at least 2.');
+        if (tasks.length < 1) {
             return {
                 success: false,
-                error: `AI only generated ${tasks.length} todos. Expected at least 2 todos for comprehensive monitoring.`
+                error: "AI did not generate any todos."
             };
         }
         
@@ -180,4 +192,3 @@ function parseTasksFromAIResponse(aiResponse: any): any[] {
         throw new Error('Failed to generate tasks from AI response');
     }
 }
-

@@ -42,8 +42,8 @@ export async function POST(request: NextRequest) {
       
       if (shouldProcess) {
         try {
-          // Add todo to BullMQ queue instead of direct processing
-          const queueResponse = await fetch(`${process.env.BULLMQ_API_URL || 'http://localhost:3001'}/add-task`, {
+          const queueApiUrl = (process.env.SCOUTS_QUEUE_API_URL || process.env.AI_WORKER_URL || 'http://localhost:8787').replace(/\/$/, '');
+          const queueResponse = await fetch(`${queueApiUrl}/queue-task`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
               title: todo.title,
               agentType: todo.agentType,
               status: 'queued',
-              jobId: queueResult.jobId
+              jobId: queueResult.todoId || todo.id
             });
             
             // Update todo status to IN_PROGRESS
@@ -245,4 +245,4 @@ async function getLatestPriceData(scoutId: string): Promise<any> {
   }
 
   return null;
-} 
+}

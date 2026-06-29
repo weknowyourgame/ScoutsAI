@@ -141,7 +141,7 @@ const Dialog = ({ children, type = 'mail' }: DialogProps) => {
                         </DialogHeader>
                         <div className="mt-4">
                             <p className="text-sm text-gray-600">
-                                You're currently on the home page. Use the menu to navigate to different sections.
+                                You&apos;re currently on the home page. Use the menu to navigate to different sections.
                             </p>
                         </div>
                     </>
