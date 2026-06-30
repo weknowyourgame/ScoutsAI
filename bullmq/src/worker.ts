@@ -110,8 +110,8 @@ async function composeEmailHTML(todo: any, result: TaskResult, isFirst: boolean)
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        provider: 'perplexity-ai',
-        model_id: 'sonar',
+        provider: 'openrouter',
+        model_id: 'openai/gpt-oss-120b:free',
         prompt: `Create a short HTML email ${isFirst ? 'announcing the scout has started and' : ''} summarizing the latest update for this task.
 
 Task: ${todo.title}
@@ -260,8 +260,8 @@ async function processResearchAgent(data: any): Promise<ResearchResult> {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      provider: 'perplexity-ai',
-      model_id: 'sonar',
+      provider: 'openrouter',
+        model_id: 'openai/gpt-oss-120b:free',
       prompt: `Please provide comprehensive research on: ${data.description || data.title}`,
       system_prompt: 'You are a comprehensive research assistant. Provide detailed, well-structured information about the given topic. Include relevant facts, data, trends, and insights.',
       todoData: data
@@ -339,8 +339,8 @@ async function processSearchAgent(data: any): Promise<SearchResult> {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      provider: 'groq',
-      model_id: 'llama-3.1-8b-instant',
+      provider: 'openrouter',
+      model_id: 'qwen/qwen3-next-80b-a3b-instruct:free',
       prompt: `Search for: ${data.title}. ${data.description || ''}`,
       system_prompt: 'You are a search agent. Find and summarize relevant information.',
       todoData: data
@@ -372,8 +372,8 @@ async function processActionScout(data: any): Promise<ActionScoutResult> {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      provider: 'groq',
-      model_id: 'llama-3.1-8b-instant',
+      provider: 'openrouter',
+      model_id: 'qwen/qwen3-next-80b-a3b-instruct:free',
       prompt: `Execute action: ${data.title}. ${data.description || ''}`,
       system_prompt: 'You are an action scout. Execute the requested action or notification.',
       todoData: data
@@ -416,8 +416,8 @@ async function processSummaryAgent(data: any): Promise<SummaryResult> {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      provider: 'groq',
-      model_id: 'llama-3.1-8b-instant',
+      provider: 'openrouter',
+      model_id: 'qwen/qwen3-next-80b-a3b-instruct:free',
       prompt: `Generate summary for: ${data.title}. Use the following completed todos as context: ${JSON.stringify(relatedTodos.map(t => ({ title: t.title, resultData: t.resultData })))}`,
       system_prompt: 'You are a summary assistant. Create comprehensive summaries and insights based on the provided data.',
       todoData: data
@@ -467,8 +467,8 @@ async function processPlexAgent(data: any): Promise<PlexResult> {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      provider: 'groq',
-      model_id: 'llama-3.1-8b-instant',
+      provider: 'openrouter',
+      model_id: 'qwen/qwen3-next-80b-a3b-instruct:free',
       prompt: `Perform advanced research on: ${data.title}. ${data.description || ''}`,
       system_prompt: 'You are an advanced search assistant. Perform comprehensive research and provide detailed analysis.',
       todoData: data
@@ -499,8 +499,8 @@ async function createIndividualTodoSummary(todo: any, result: TaskResult) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        provider: 'groq',
-        model_id: 'llama-3.1-8b-instant',
+        provider: 'openrouter',
+      model_id: 'qwen/qwen3-next-80b-a3b-instruct:free',
         prompt: `Create a summary for the following completed task:
 
 **Task**: ${todo.title}

@@ -1,4 +1,4 @@
-import { completeTaskSchema } from "../schemas/types";
+import { completeTaskSchema } from "../schemas/types.js";
 import { z } from "zod";
 
 export async function generalScoutParser(task: z.infer<typeof completeTaskSchema>) {

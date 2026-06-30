@@ -52,10 +52,16 @@ async function sendEmailViaWorker({ email, subject, html }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, subject, body: html })
     });
-    if (!res.ok) {
-        const txt = await res.text().catch(() => '');
-        console.warn('Email send failed:', res.status, txt);
+    const contentType = res.headers.get('content-type') || '';
+    const body = contentType.includes('application/json') ? await res.json().catch(() => ({})) : await res.text().catch(() => '');
+    const ok = !!(body && typeof body === 'object' && 'ok' in body ? body.ok : res.ok);
+    if (!ok) {
+        console.warn('Email send failed:', res.status, body);
     }
+    else {
+        console.log(`Email sent to ${email}: ${subject}`);
+    }
+    return { ok, status: res.status, body };
 }
 // Helper: compose email HTML (LLM with fallback)
 async function composeEmailHTML(todo, result, isFirst) {
@@ -65,8 +71,8 @@ async function composeEmailHTML(todo, result, isFirst) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                provider: 'perplexity-ai',
-                model_id: 'sonar',
+                provider: 'openrouter',
+                model_id: 'openai/gpt-oss-120b:free',
                 prompt: `Create a short HTML email ${isFirst ? 'announcing the scout has started and' : ''} summarizing the latest update for this task.
 
 Task: ${todo.title}
@@ -107,8 +113,13 @@ async function maybeSendEmailForTodo(todo, result) {
         return;
     const subject = isFirst ? `Your Scout started: ${todo.title}` : `Scout update: ${todo.title}`;
     const html = await composeEmailHTML(todo, result, isFirst);
-    await sendEmailViaWorker({ email, subject, html });
-    await prisma.log.create({ data: { scoutId: todo.scoutId, todoId: todo.todoId, agentType: todo.agentType, message: 'EMAIL_SENT', data: { subject } } });
+    const resp = await sendEmailViaWorker({ email, subject, html });
+    if (resp.ok) {
+        await prisma.log.create({ data: { scoutId: todo.scoutId, todoId: todo.todoId, agentType: todo.agentType, message: 'EMAIL_SENT', data: { subject } } });
+    }
+    else {
+        await prisma.log.create({ data: { scoutId: todo.scoutId, todoId: todo.todoId, agentType: todo.agentType, message: 'EMAIL_SEND_FAILED', data: { subject, status: resp.status, body: resp.body } } });
+    }
 }
 // Worker to process all types of tasks
 const worker = new bullmq_1.Worker('stagehand-tasks', async (job) => {
@@ -198,8 +209,8 @@ async function processResearchAgent(data) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            provider: 'perplexity-ai',
-            model_id: 'sonar',
+            provider: 'openrouter',
+            model_id: 'openai/gpt-oss-120b:free',
             prompt: `Please provide comprehensive research on: ${data.description || data.title}`,
             system_prompt: 'You are a comprehensive research assistant. Provide detailed, well-structured information about the given topic. Include relevant facts, data, trends, and insights.',
             todoData: data
@@ -266,8 +277,8 @@ async function processSearchAgent(data) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            provider: 'groq',
-            model_id: 'llama-3.1-8b-instant',
+            provider: 'openrouter',
+            model_id: 'qwen/qwen3-next-80b-a3b-instruct:free',
             prompt: `Search for: ${data.title}. ${data.description || ''}`,
             system_prompt: 'You are a search agent. Find and summarize relevant information.',
             todoData: data
@@ -294,8 +305,8 @@ async function processActionScout(data) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            provider: 'groq',
-            model_id: 'llama-3.1-8b-instant',
+            provider: 'openrouter',
+            model_id: 'qwen/qwen3-next-80b-a3b-instruct:free',
             prompt: `Execute action: ${data.title}. ${data.description || ''}`,
             system_prompt: 'You are an action scout. Execute the requested action or notification.',
             todoData: data
@@ -332,8 +343,8 @@ async function processSummaryAgent(data) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            provider: 'groq',
-            model_id: 'llama-3.1-8b-instant',
+            provider: 'openrouter',
+            model_id: 'qwen/qwen3-next-80b-a3b-instruct:free',
             prompt: `Generate summary for: ${data.title}. Use the following completed todos as context: ${JSON.stringify(relatedTodos.map(t => ({ title: t.title, resultData: t.resultData })))}`,
             system_prompt: 'You are a summary assistant. Create comprehensive summaries and insights based on the provided data.',
             todoData: data
@@ -376,8 +387,8 @@ async function processPlexAgent(data) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            provider: 'groq',
-            model_id: 'llama-3.1-8b-instant',
+            provider: 'openrouter',
+            model_id: 'qwen/qwen3-next-80b-a3b-instruct:free',
             prompt: `Perform advanced research on: ${data.title}. ${data.description || ''}`,
             system_prompt: 'You are an advanced search assistant. Perform comprehensive research and provide detailed analysis.',
             todoData: data
@@ -404,8 +415,8 @@ async function createIndividualTodoSummary(todo, result) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                provider: 'groq',
-                model_id: 'llama-3.1-8b-instant',
+                provider: 'openrouter',
+                model_id: 'qwen/qwen3-next-80b-a3b-instruct:free',
                 prompt: `Create a summary for the following completed task:
 
 **Task**: ${todo.title}

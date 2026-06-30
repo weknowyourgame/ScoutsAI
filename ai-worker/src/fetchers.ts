@@ -133,62 +133,210 @@ function parseTasksFromAIResponse(aiResponse: any): any[] {
 
         console.log('AI Response content:', content);
 
-        // Try multiple patterns to extract JSON
-        let tasksJson = null;
-        
-        // Pattern 1: ```json ... ```
-        let tasksMatch = content.match(/```json\n([\s\S]*?)\n```/);
-        if (tasksMatch) {
-            tasksJson = tasksMatch[1];
-        }
-        
-        // Pattern 2: ``` ... ``` (without json specifier)
-        if (!tasksJson) {
-            tasksMatch = content.match(/```\n([\s\S]*?)\n```/);
-            if (tasksMatch) {
-                tasksJson = tasksMatch[1];
-            }
-        }
-        
-        // Pattern 3: Look for JSON array directly
-        if (!tasksJson) {
-            const jsonMatch = content.match(/\[[\s\S]*\]/);
-            if (jsonMatch) {
-                tasksJson = jsonMatch[0];
-            }
-        }
-        
-        // Pattern 4: Look for JSON object with tasks array
-        if (!tasksJson) {
-            const objectMatch = content.match(/\{[\s\S]*\}/);
-            if (objectMatch) {
-                try {
-                    const parsed = JSON.parse(objectMatch[0]);
-                    if (parsed.tasks && Array.isArray(parsed.tasks)) {
-                        return parsed.tasks;
-                    }
-                } catch (e) {
-                    // Continue to next pattern
+        for (const tasksJson of getJsonCandidates(content)) {
+            try {
+                console.log('Trying extracted JSON:', tasksJson);
+                const parsed = parseJsonLike(tasksJson);
+                const tasks = extractTasksArray(parsed);
+                if (tasks) {
+                    console.log('Parsed tasks:', tasks);
+                    return tasks;
                 }
+            } catch (candidateError) {
+                console.warn('Skipping invalid JSON candidate:', candidateError instanceof Error ? candidateError.message : candidateError);
             }
         }
 
-        if (!tasksJson) {
-            console.error('No JSON found in AI response content');
-            console.error('Content was:', content);
-            throw new Error('No JSON tasks found in AI response');
-        }
-
-        console.log('Extracted JSON:', tasksJson);
-        
-        const tasks = JSON.parse(tasksJson);
-        console.log('Parsed tasks:', tasks);
-        
-        return Array.isArray(tasks) ? tasks : [tasks];
-        
+        console.error('No valid JSON tasks found in AI response content');
+        console.error('Content was:', content);
+        throw new Error('No valid JSON tasks found in AI response');
     } catch (error) {
         console.error('Failed to parse tasks from AI response:', error);
         console.error('AI Response was:', aiResponse);
         throw new Error('Failed to generate tasks from AI response');
     }
+}
+
+function extractTasksArray(parsed: unknown): any[] | null {
+    if (Array.isArray(parsed)) {
+        return parsed;
+    }
+
+    if (parsed && typeof parsed === "object" && "tasks" in parsed) {
+        const tasks = (parsed as { tasks?: unknown }).tasks;
+        return Array.isArray(tasks) ? tasks : null;
+    }
+
+    return parsed && typeof parsed === "object" ? [parsed] : null;
+}
+
+function getJsonCandidates(content: string): string[] {
+    const candidates: string[] = [];
+    const fencedBlockPattern = /```(?:json)?\s*([\s\S]*?)```/gi;
+    let fencedMatch: RegExpExecArray | null;
+
+    while ((fencedMatch = fencedBlockPattern.exec(content)) !== null) {
+        candidates.push(fencedMatch[1].trim());
+    }
+
+    candidates.push(content.trim());
+    candidates.push(...extractBalancedJsonSnippets(content));
+
+    return Array.from(new Set(candidates.filter(Boolean)));
+}
+
+function parseJsonLike(candidate: string): unknown {
+    try {
+        return JSON.parse(candidate);
+    } catch {
+        return JSON.parse(stripJsonCommentsAndTrailingCommas(candidate));
+    }
+}
+
+function extractBalancedJsonSnippets(content: string): string[] {
+    const snippets: string[] = [];
+    let start = -1;
+    let stack: string[] = [];
+    let inString = false;
+    let escaped = false;
+
+    for (let index = 0; index < content.length; index += 1) {
+        const char = content[index];
+
+        if (inString) {
+            if (escaped) {
+                escaped = false;
+            } else if (char === "\\") {
+                escaped = true;
+            } else if (char === '"') {
+                inString = false;
+            }
+            continue;
+        }
+
+        if (char === '"') {
+            inString = true;
+            continue;
+        }
+
+        if (char === "{" || char === "[") {
+            if (stack.length === 0) {
+                start = index;
+            }
+            stack.push(char);
+            continue;
+        }
+
+        if (char !== "}" && char !== "]") {
+            continue;
+        }
+
+        const expectedOpening = char === "}" ? "{" : "[";
+        if (stack[stack.length - 1] !== expectedOpening) {
+            stack = [];
+            start = -1;
+            continue;
+        }
+
+        stack.pop();
+        if (stack.length === 0 && start >= 0) {
+            snippets.push(content.slice(start, index + 1).trim());
+            start = -1;
+        }
+    }
+
+    return snippets;
+}
+
+function stripJsonCommentsAndTrailingCommas(candidate: string): string {
+    let result = "";
+    let inString = false;
+    let escaped = false;
+
+    for (let index = 0; index < candidate.length; index += 1) {
+        const char = candidate[index];
+        const nextChar = candidate[index + 1];
+
+        if (inString) {
+            result += char;
+            if (escaped) {
+                escaped = false;
+            } else if (char === "\\") {
+                escaped = true;
+            } else if (char === '"') {
+                inString = false;
+            }
+            continue;
+        }
+
+        if (char === '"') {
+            inString = true;
+            result += char;
+            continue;
+        }
+
+        if (char === "/" && nextChar === "/") {
+            while (index < candidate.length && candidate[index] !== "\n") {
+                index += 1;
+            }
+            result += "\n";
+            continue;
+        }
+
+        if (char === "/" && nextChar === "*") {
+            index += 2;
+            while (index < candidate.length && !(candidate[index] === "*" && candidate[index + 1] === "/")) {
+                index += 1;
+            }
+            index += 1;
+            continue;
+        }
+
+        result += char;
+    }
+
+    return stripTrailingCommasOutsideStrings(result).trim();
+}
+
+function stripTrailingCommasOutsideStrings(candidate: string): string {
+    let result = "";
+    let inString = false;
+    let escaped = false;
+
+    for (let index = 0; index < candidate.length; index += 1) {
+        const char = candidate[index];
+
+        if (inString) {
+            result += char;
+            if (escaped) {
+                escaped = false;
+            } else if (char === "\\") {
+                escaped = true;
+            } else if (char === '"') {
+                inString = false;
+            }
+            continue;
+        }
+
+        if (char === '"') {
+            inString = true;
+            result += char;
+            continue;
+        }
+
+        if (char === ",") {
+            let nextIndex = index + 1;
+            while (/\s/.test(candidate[nextIndex] ?? "")) {
+                nextIndex += 1;
+            }
+
+            if (candidate[nextIndex] === "}" || candidate[nextIndex] === "]") {
+                continue;
+            }
+        }
+
+        result += char;
+    }
+
+    return result;
 }

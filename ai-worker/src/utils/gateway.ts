@@ -13,6 +13,7 @@ export async function callGatewayAI(env: Env, input: Req | AnalyzeReq) {
   const isAnalyzeRequest = "system_prompt" in input && input.system_prompt === "Analyze this monitoring request";
   const systemPrompt = isAnalyzeRequest ? analyzePrompt : (input.system_prompt || todoMakerPrompt);
   const profile = ("profile" in input && input.profile) || (isAnalyzeRequest ? "analyzer" : "task-generator");
+  const maxTokens = isAnalyzeRequest ? 200 : profile === "task-generator" ? 4096 : 2048;
   const client = createGatewayClient(env);
   const result = await client.chat({
     profile: profile as AiProfileId,
@@ -22,7 +23,7 @@ export async function callGatewayAI(env: Env, input: Req | AnalyzeReq) {
       { role: "system", content: systemPrompt },
       { role: "user", content: input.prompt },
     ],
-    maxTokens: isAnalyzeRequest ? 200 : 2048,
+    maxTokens,
   });
 
   return {

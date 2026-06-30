@@ -34,8 +34,8 @@ We have custom .cursorrules for this project. It'll help quite a bit with writin
 
 To run on Browserbase, add your API keys to .env and change `env: "LOCAL"` to `env: "BROWSERBASE"` in [stagehand.config.ts](stagehand.config.ts).
 
-### Use Anthropic Claude 3.5 Sonnet
+### Use free OpenRouter models only
 
-1. Add your API key to .env
-2. Change `modelName: "gpt-4o"` to `modelName: "claude-3-5-sonnet-latest"` in [stagehand.config.ts](stagehand.config.ts)
-3. Change `modelClientOptions: { apiKey: process.env.OPENAI_API_KEY }` to `modelClientOptions: { apiKey: process.env.ANTHROPIC_API_KEY }` in [stagehand.config.ts](stagehand.config.ts)
+1. Add `OPENROUTER_API_KEY` to `.env`.
+2. Keep `STAGEHAND_MODEL` set to an OpenRouter free model ID such as `openai/gpt-oss-20b:free`.
+3. Non-free `STAGEHAND_MODEL` values are ignored by [stagehand.config.ts](stagehand.config.ts).

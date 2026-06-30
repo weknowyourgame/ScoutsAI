@@ -110,32 +110,8 @@ async function generateComprehensiveSummary(scout: any): Promise<string> {
     content: summary.content
   }));
 
-  // Call Perplexity API for comprehensive summary generation
-  const summaryResponse = await fetch('https://api.perplexity.ai/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${process.env.PERPLEXITY_API_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: 'llama-3.1-8b-instant',
-      messages: [
-        {
-          role: 'system',
-          content: `You are a comprehensive analysis assistant. Create detailed, well-structured summaries that include:
-
-1. **Executive Summary**: Key findings and insights
-2. **Data Analysis**: Patterns, trends, and important data points
-3. **Recommendations**: Actionable insights and next steps
-4. **Risk Assessment**: Potential issues or concerns
-5. **Timeline**: Important dates and milestones
-6. **Sources**: Key sources and references
-
-Format the response with clear sections and bullet points for easy reading.`
-        },
-        {
-          role: 'user',
-          content: `Generate a comprehensive summary for the following scout:
+  const aiWorkerUrl = (process.env.AI_WORKER_URL || 'http://localhost:8787').replace(/\/$/, '');
+  const prompt = `Generate a comprehensive summary for the following scout:
 
 **Original Query**: ${scout.userQuery}
 
@@ -152,10 +128,28 @@ ${individualSummaries.map((summary: any) => `
 - ${summary.title}: ${summary.content}
 `).join('\n')}
 
-Please provide a comprehensive analysis that synthesizes all this information into actionable insights.`
-        }
-      ],
-      max_tokens: 3000
+Please provide a comprehensive analysis that synthesizes all this information into actionable insights.`;
+
+  const summaryResponse = await fetch(`${aiWorkerUrl}/task`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      profile: 'summarizer',
+      prompt,
+      system_prompt: `You are a comprehensive analysis assistant. Create detailed, well-structured summaries that include:
+
+1. **Executive Summary**: Key findings and insights
+2. **Data Analysis**: Patterns, trends, and important data points
+3. **Recommendations**: Actionable insights and next steps
+4. **Risk Assessment**: Potential issues or concerns
+5. **Timeline**: Important dates and milestones
+6. **Sources**: Key sources and references
+
+Format the response with clear sections and bullet points for easy reading.`,
+      userId: scout.userId,
+      scoutId: scout.id
     })
   });
 

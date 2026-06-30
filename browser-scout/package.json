@@ -4,7 +4,7 @@
   "scripts": {
     "build": "tsc",
     "start": "tsx src/server.ts",
-    "worker": "tsx src/worker.ts",
+    "worker": "echo 'browser-scout Redis worker is disabled; Cloudflare Queues consume tasks in ai-worker'",
     "postinstall": "playwright install chromium"
   },
   "dependencies": {

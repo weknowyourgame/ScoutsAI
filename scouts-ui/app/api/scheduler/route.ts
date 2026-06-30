@@ -3,6 +3,10 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+function appUrl() {
+  return (process.env.APP_URL || 'http://localhost:3000').replace(/\/$/, '');
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -57,7 +61,7 @@ async function processScouts() {
     for (const scout of inProgressScouts) {
       try {
         // Queue todos for processing
-        const queueResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/queue-todos`, {
+        const queueResponse = await fetch(`${appUrl()}/api/queue-todos`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -139,7 +143,7 @@ async function generateSummaries() {
 
         // Generate summary if most todos are completed
         if (completedTodos >= Math.max(2, totalTodos * 0.7)) {
-          const summaryResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/generate-summary`, {
+          const summaryResponse = await fetch(`${appUrl()}/api/generate-summary`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'

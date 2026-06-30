@@ -5,8 +5,9 @@ import type { CompleteTask } from "./schemas/task";
 
 export interface ProcessorEnv extends AiEnv, QueueEnv {
   SCOUTS_APP_URL?: string;
-  BROWSER_SCOUT_URL?: string;
   SCOUTS_INTERNAL_API_TOKEN?: string;
+  CLOUDFLARE_ACCOUNT_ID?: string;
+  CLOUDFLARE_API_TOKEN?: string;
 }
 
 type TaskResult =
@@ -68,24 +69,43 @@ async function processResearchAgent(env: ProcessorEnv, task: CompleteTask): Prom
 }
 
 async function processBrowserAutomation(env: ProcessorEnv, task: CompleteTask): Promise<TaskResult> {
-  const browserScoutUrl = (env.BROWSER_SCOUT_URL || "http://localhost:3002").replace(/\/$/, "");
-  const response = await fetch(`${browserScoutUrl}/execute`, {
+  if (!env.CLOUDFLARE_ACCOUNT_ID || !env.CLOUDFLARE_API_TOKEN) {
+    throw new Error("Cloudflare Browser Run is not configured. Set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN.");
+  }
+
+  const url = task.goTo?.[0] || (task.search?.[0] ? `https://www.google.com/search?q=${encodeURIComponent(task.search[0])}` : undefined);
+  const prompt = [
+    task.description || task.title,
+    task.search?.length ? `Search targets: ${task.search.join(", ")}` : "",
+    task.actions?.length ? `Actions: ${task.actions.map((action) => `${action.type}: ${action.description}`).join("; ")}` : "",
+  ].filter(Boolean).join("\n");
+
+  const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/browser-rendering/json`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Authorization": `Bearer ${env.CLOUDFLARE_API_TOKEN}`,
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({
-      ...task,
-      goTo: task.goTo || [],
-      search: task.search || [],
-      actions: Array.isArray(task.actions) ? task.actions : [],
+      ...(url ? { url } : { html: `<main>${escapeHtml(prompt)}</main>` }),
+      prompt,
     }),
   });
 
   if (!response.ok) {
     const text = await response.text().catch(() => "");
-    throw new Error(`Browser Scout error ${response.status}: ${text}`);
+    throw new Error(`Cloudflare Browser Run error ${response.status}: ${text}`);
   }
 
   return { type: "BROWSER_AUTOMATION", result: await response.json(), completedAt: new Date().toISOString() };
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 async function processGenericAgent(env: ProcessorEnv, task: CompleteTask): Promise<TaskResult> {

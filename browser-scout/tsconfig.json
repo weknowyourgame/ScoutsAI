@@ -12,6 +12,6 @@
     "allowImportingTsExtensions": false,
     "noEmit": false
   },
-  "include": ["*.ts", "api", "examples/run.ts"],
+  "include": ["*.ts", "src/**/*.ts", "api/**/*.ts", "examples/run.ts"],
   "exclude": ["node_modules", "dist"]
 }

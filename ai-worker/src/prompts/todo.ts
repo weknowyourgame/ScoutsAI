@@ -109,40 +109,46 @@ Structure todos in logical order:
 
 ## Output Format
 
+Return ONLY a valid JSON array. Do not include markdown fences, comments, prose, explanations, trailing commas, or keys outside the task objects.
+
 For each todo, provide:
 
 \`\`\`json
-{
-  "title": "Short, descriptive title for the todo",
-  "description": "Clear, actionable description of what this todo should accomplish",
-  "agentType": "ACTION_SCOUT|BROWSER_AUTOMATION|SEARCH_AGENT|PLEX_AGENT|RESEARCH_AGENT|SUMMARY_AGENT",
-  "taskType": "SINGLE_RUN|CONTINUOUSLY_RUNNING|RUN_ON_CONDITION|THINKING_RESEARCH|FAILED_TASK_RECOVERY",
-  "goTo": ["https://example.com", "https://another-site.com"], // For BROWSER_AUTOMATION: specific URLs to visit
-  "search": ["search term 1", "search term 2"], // For SEARCH_AGENT: specific search terms
-  "actions": [ // For BROWSER_AUTOMATION: specific actions to perform
-    {
-      "type": "act",
-      "description": "Click on the price button"
+[
+  {
+    "title": "Short, descriptive title for the todo",
+    "description": "Clear, actionable description of what this todo should accomplish",
+    "agentType": "ACTION_SCOUT|BROWSER_AUTOMATION|SEARCH_AGENT|PLEX_AGENT|RESEARCH_AGENT|SUMMARY_AGENT",
+    "taskType": "SINGLE_RUN|CONTINUOUSLY_RUNNING|RUN_ON_CONDITION|THINKING_RESEARCH|FAILED_TASK_RECOVERY",
+    "goTo": ["https://example.com", "https://another-site.com"],
+    "search": ["search term 1", "search term 2"],
+    "actions": [
+      {
+        "type": "act",
+        "description": "Click on the price button"
+      },
+      {
+        "type": "observe",
+        "description": "Extract the current price from the page"
+      },
+      {
+        "type": "extract",
+        "description": "Get product details including price, availability, and reviews"
+      }
+    ],
+    "condition": {
+      "type": "price_threshold|data_change|time_based|failure_count",
+      "parameters": {
+        "threshold": 500,
+        "comparison": "less_than"
+      }
     },
-    {
-      "type": "observe", 
-      "description": "Extract the current price from the page"
-    },
-    {
-      "type": "extract",
-      "description": "Get product details including price, availability, and reviews"
-    }
-  ],
-  "condition": { // For RUN_ON_CONDITION tasks
-    "type": "price_threshold|data_change|time_based|failure_count",
-    "parameters": {
-      "threshold": 500,
-      "comparison": "less_than"
-    }
-  },
-  "scheduledFor": "2024-01-01T00:00:00Z" // For CONTINUOUSLY_RUNNING tasks
-}
+    "scheduledFor": "2024-01-01T00:00:00Z"
+  }
+]
 \`\`\`
+
+Optional fields may be omitted when not relevant. If you include "actions", every action type must be one of: "act", "observe", or "extract".
 
 ## Action Types for BROWSER_AUTOMATION:
 - **act**: Click buttons, fill forms, navigate pages

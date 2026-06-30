@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { addLocalTodos } from '@/app/lib/local-store';
 import { isServerLocalOnlyMode } from '@/app/lib/local-mode';
 
+function appUrl() {
+  return (process.env.APP_URL || 'http://localhost:3000').replace(/\/$/, '');
+}
+
 export async function POST(request: NextRequest) {
   let fallbackScoutId: string | undefined;
   let fallbackUserQuery: string | undefined;
@@ -96,7 +100,7 @@ export async function POST(request: NextRequest) {
 
       if (storedTasks.length > 0) {
         try {
-          const queueResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/queue-todos`, {
+          const queueResponse = await fetch(`${appUrl()}/api/queue-todos`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -128,7 +132,7 @@ export async function POST(request: NextRequest) {
       const storedTasks = addLocalTodos(fallbackScoutId, fallbackUserId, tasks);
 
       try {
-        await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/queue-todos`, {
+        await fetch(`${appUrl()}/api/queue-todos`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

@@ -10,7 +10,7 @@ export declare const actionSchema: z.ZodObject<{
 export declare const completeTaskSchema: z.ZodObject<{
     todoId: z.ZodString;
     title: z.ZodString;
-    description: z.ZodOptional<z.ZodString>;
+    description: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     agentType: z.ZodEnum<{
         ACTION_SCOUT: "ACTION_SCOUT";
         BROWSER_AUTOMATION: "BROWSER_AUTOMATION";
@@ -26,20 +26,21 @@ export declare const completeTaskSchema: z.ZodObject<{
         THINKING_RESEARCH: "THINKING_RESEARCH";
         FAILED_TASK_RECOVERY: "FAILED_TASK_RECOVERY";
     }>;
-    condition: z.ZodOptional<z.ZodAny>;
+    condition: z.ZodNullable<z.ZodOptional<z.ZodAny>>;
     resultData: z.ZodOptional<z.ZodAny>;
     userId: z.ZodString;
     scoutId: z.ZodString;
-    goTo: z.ZodOptional<z.ZodArray<z.ZodString>>;
-    search: z.ZodOptional<z.ZodArray<z.ZodString>>;
-    actions: z.ZodUnion<[z.ZodOptional<z.ZodArray<z.ZodObject<{
+    scheduledFor: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    goTo: z.ZodDefault<z.ZodOptional<z.ZodArray<z.ZodString>>>;
+    search: z.ZodDefault<z.ZodOptional<z.ZodArray<z.ZodString>>>;
+    actions: z.ZodDefault<z.ZodNullable<z.ZodOptional<z.ZodArray<z.ZodObject<{
         type: z.ZodEnum<{
             act: "act";
             observe: "observe";
             extract: "extract";
         }>;
         description: z.ZodString;
-    }, z.core.$strip>>>, z.ZodNull]>;
+    }, z.core.$strip>>>>>;
     notificationFrequency: z.ZodOptional<z.ZodEnum<{
         EVERY_HOUR: "EVERY_HOUR";
         ONCE_A_DAY: "ONCE_A_DAY";

@@ -1,74 +1,44 @@
 import { z } from "zod";
 
-// takes in the required goTo website along with a actions
-// schema made by todo maker
-
-/*
-    example schema:
-    {
-        "goTo": ["https://www.google.com"],
-        "search": ["Flights from NYC to LA"],
-        "actions": [
-            {
-                "type": "act",
-                "description": "Click the search button & search for flights from NYC to LA"
-            },
-            {
-                "type": "observe", 
-                "description": "Observe the search results"
-            },
-            {
-                "type": "extract",
-                "description": "Extract the search results"
-            },
-            {
-                "type": "act",
-                "description": "Click on the first result"
-            },
-            {
-                "type": "observe",
-                "description": "Observe the product details"
-            },
-            {
-                "type": "extract",
-                "description": "Extract price and availability"
-            }
-        ]
-    }
-*/
-
 export const actionSchema = z.object({
-    type: z.enum(["act", "observe", "extract"]),
-    description: z.string()
+  type: z.enum(["act", "observe", "extract"]),
+  description: z.string(),
 });
 
-// Old browser-scout task schema (for backward compatibility)
 export const generalScoutTask = z.object({
-    goTo: z.array(z.string()),
-    search: z.array(z.string()),
-    actions: z.array(actionSchema)
+  goTo: z.array(z.string()).default([]),
+  search: z.array(z.string()).default([]),
+  actions: z.array(actionSchema).default([]),
 });
 
-// Task schema
 export const completeTaskSchema = z.object({
-    todoId: z.string(),
-    title: z.string(),
-    description: z.string().optional(),
-    agentType: z.enum(['BROWSER_AUTOMATION', 'SEARCH_AGENT', 'PLEX_AGENT']),
-    taskType: z.enum(['SINGLE_RUN', 'CONTINUOUSLY_RUNNING', 'RUN_ON_CONDITION']),
-    condition: z.any().optional(),
-    resultData: z.any().optional(),
-    userId: z.string(),
-    scoutId: z.string(),
-    
-    // Browser-scout fields
-    goTo: z.array(z.string()).optional(),
-    search: z.array(z.string()).optional(),
-    actions: z.array(actionSchema).optional(),
-    
-    // Notification frequency
-    notificationFrequency: z.enum(['EVERY_HOUR', 'ONCE_A_DAY', 'ONCE_A_WEEK', 'AI_DECIDE']).optional()
+  todoId: z.string(),
+  title: z.string(),
+  description: z.string().optional().nullable(),
+  agentType: z.enum([
+    "ACTION_SCOUT",
+    "BROWSER_AUTOMATION",
+    "SEARCH_AGENT",
+    "PLEX_AGENT",
+    "RESEARCH_AGENT",
+    "SUMMARY_AGENT",
+  ]),
+  taskType: z.enum([
+    "SINGLE_RUN",
+    "CONTINUOUSLY_RUNNING",
+    "RUN_ON_CONDITION",
+    "THINKING_RESEARCH",
+    "FAILED_TASK_RECOVERY",
+  ]),
+  condition: z.any().optional().nullable(),
+  resultData: z.any().optional(),
+  userId: z.string(),
+  scoutId: z.string(),
+  scheduledFor: z.string().optional().nullable(),
+  goTo: z.array(z.string()).optional().default([]),
+  search: z.array(z.string()).optional().default([]),
+  actions: z.array(actionSchema).optional().nullable().default([]),
+  notificationFrequency: z.enum(["EVERY_HOUR", "ONCE_A_DAY", "ONCE_A_WEEK", "AI_DECIDE"]).optional(),
 });
 
-// Type for the complete task
 export type CompleteTask = z.infer<typeof completeTaskSchema>;

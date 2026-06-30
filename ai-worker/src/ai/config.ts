@@ -19,33 +19,38 @@ export interface ProfileConfig {
 
 export const aiProfiles: Record<AiProfileId, ProfileConfig> = {
   "task-generator": {
-    primary: { model: "deepseek/deepseek-chat" },
-    fallbacks: ["google/gemini-2.5-flash-lite"],
+    primary: { model: "qwen/qwen3-next-80b-a3b-instruct:free" },
+    fallbacks: ["openai/gpt-oss-20b:free", "meta-llama/llama-3.3-70b-instruct:free"],
     temperature: 0.2,
   },
   analyzer: {
-    primary: { model: "deepseek/deepseek-chat" },
+    primary: { model: "openai/gpt-oss-20b:free" },
+    fallbacks: ["qwen/qwen3-next-80b-a3b-instruct:free"],
     temperature: 0.1,
   },
   researcher: {
-    primary: { model: "perplexity/sonar" },
-    fallbacks: ["deepseek/deepseek-chat"],
+    primary: { model: "openai/gpt-oss-120b:free" },
+    fallbacks: ["qwen/qwen3-next-80b-a3b-instruct:free", "nvidia/nemotron-3-super-120b-a12b:free"],
     temperature: 0.3,
   },
   search: {
-    primary: { model: "deepseek/deepseek-chat" },
+    primary: { model: "qwen/qwen3-next-80b-a3b-instruct:free" },
+    fallbacks: ["meta-llama/llama-3.3-70b-instruct:free"],
     temperature: 0.2,
   },
   action: {
-    primary: { model: "deepseek/deepseek-chat" },
+    primary: { model: "qwen/qwen3-next-80b-a3b-instruct:free" },
+    fallbacks: ["openai/gpt-oss-20b:free"],
     temperature: 0.2,
   },
   summarizer: {
-    primary: { model: "deepseek/deepseek-chat" },
+    primary: { model: "openai/gpt-oss-120b:free" },
+    fallbacks: ["qwen/qwen3-next-80b-a3b-instruct:free"],
     temperature: 0.2,
   },
   email: {
-    primary: { model: "deepseek/deepseek-chat" },
+    primary: { model: "meta-llama/llama-3.3-70b-instruct:free" },
+    fallbacks: ["qwen/qwen3-next-80b-a3b-instruct:free"],
     temperature: 0.2,
   },
 };

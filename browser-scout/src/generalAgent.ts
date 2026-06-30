@@ -1,5 +1,5 @@
-import { completeTaskSchema, generalScoutTask } from "./schemas/types";
-import { generalScoutParser } from "./utils/generalAgent";
+import { completeTaskSchema } from "./schemas/types.js";
+import { generalScoutParser } from "./utils/generalAgent.js";
 import { StagehandExecutor } from "./utils/stagehand-executor.js";
 import { z } from "zod";
 
